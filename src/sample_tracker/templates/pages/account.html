@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block buttons %}
+<a href="{{ url_for('index.index')}}" class="btn btn-primary" role="button">Home</a>
+<a href="{{ url_for('pages.editproject')}}" class="btn btn-warning mt-3" role="button">New Project</a>
+{% endif %}
+<a href="{{ url_for('pages.account')}}" class="btn btn-primary" role="button">Account</a>
+<a href="{{ url_for('login.logout') }}" class="btn btn-danger" role="button">Log Out</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="row text-center">
+	<div>
+		<img src="{{ url_for('static', filename='images/blood_sample.svg') }}" width="400px">
+	</div>
+</div>
+
+<div class="row">
+	<h2>{{user.given_name}} {{user.family_name}}</h2>
+</div>
+
+<div class="row">
+	<table class="table">
+		<thead class="thead-dark">
+			<tr>
+				<th scope="col">Username</th>
+				<th scope="col">Email</th>
+				<th scope="col">Email Confirmed</th>
+				<!-- <th scope="col">Permissions</th> -->
+				<th scope="col">Admin</th>
+				<th scope="col">N Projects</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% if user %}
+			{% else %}
+			<tr><td colspan=5 class="text-center">Missing User Info</td></tr>
+			{% endif %}
+			<tr>
+				<td>{{ user.preferred_username }}</td>
+				<td>{{ user.email }}</td>
+				<td>{{ user.email_verified }}</td>
+				<td>{{ user.is_admin }}</td>
+				<td>{{ n_projects }}</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+
+{% endblock %}
