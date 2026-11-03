@@ -15,17 +15,11 @@ import hashlib
 from pathlib import Path
 from markdown import markdown
 from justhtml import JustHTML
-from datetime import (
-    datetime,
-    timezone,
+from datetime import datetime
+from sample_tracker.utility import (
+    human_readable_filesize,
+    naive_utc_timestamp,
 )
-
-def naive_utc_timestamp():
-    """
-    MongoDb only supports naive timestamps recorded in UTC but does not
-    explicitly store this timezone information.
-    """
-    return datetime.now(tz=timezone.utc).replace(tzinfo=None)
 
 class ProjectStatus(str, Enum):
     proposed = "Proposed"
