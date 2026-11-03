@@ -3,6 +3,7 @@ from flask import Flask
 from sample_tracker import (
     index,
     login,
+    pages,
     db,
     auth,
 )
@@ -67,6 +68,7 @@ def create_app():
 # Blueprint constructors ----
     app.register_blueprint(index.construct_bp(engine))
     app.register_blueprint(login.construct_bp(oauth, oauth_endpoints, engine))
+    app.register_blueprint(pages.construct_bp(engine))
     
     return app
 
