@@ -1,5 +1,207 @@
+# Project ----
+from odmantic import (
+    ObjectId,
+    query,
+)
+from flask import (
+    Flask,
+    Blueprint,
+    session,
+    current_app,
+    Response,
+    render_template,
+    request,
+    flash,
+    redirect,
+    url_for, send_from_directory,
+)
+from pathlib import Path
+from werkzeug.utils import secure_filename
+from sample_tracker.utility import get_form
+from sample_tracker.auth import requires_auth
+from sample_tracker.permissions import (
+    get_current_person,
+    can_person_see_project,
+    can_person_create_project,
+    can_person_edit_project,
+    can_change_project_ownership,
+)
+from sample_tracker.datamodel import (
+    Project,
+    Person,
+    File,
+)
 def construct_bp(engine):
     bp = Blueprint("project", __name__)# , url_prefix="/project")
+
+    @bp.route("/project/<project_id>")
+    @requires_auth
+    def project(project_id):
+
+        try:
+            person = get_current_person(engine, session)
+        except Exception as e:
+            current_app.logger.exception(e)
+
+        # Get the project
+        try:
+            project = engine.find_one(Project, Project.id == ObjectId(project_id))
+        except Exception as e:
+            current_app.logger.exception("No project found" + str(e))
+        
+        # Check they are allowed to see this
+        if not can_person_see_project(person, project):
+            current_app.logger.exception((
+                f"{person.username} tried to view "
+                f"{str(project.id)} which they are not authorized to view"
+            ))
+            return Response(
+                "Not allowed to view this project",
+                status="403", mimetype="text/plain"
+            )
+            # raise Exception("Not allowed to view this project")
+
+        # We want to swap the owner on the project for the owner name
+        owner = engine.find_one(Person, Person.id == project.owner)
+        # project.owner = owner.id
+        project_owner = owner.username
+        # engine.save(project)
+        # p
+        attachments = []
+        if project.attachments != []:
+            attachments = list(engine.find(File, query.in_(File.id, project.attachments)))
+
+        return render_template(
+            "pages/project.html",
+            person = person, project = project,
+            can_edit = can_person_edit_project(person, project),
+            can_view = can_person_see_project(person, project),
+            project_description = project.get_description_html(),
+            attachments = attachments,
+            project_owner = project_owner
+        )
+
+    @bp.route("/editproject",defaults={"project_id":None})
+    @bp.route("/editproject/<project_id>")
+    @requires_auth
+    def editproject(project_id):
+        try:
+            person = get_current_person(engine, session)
+        except Exception as e:
+            current_app.logger.exception("Could not find user" + str(e))
+            # return redirect(url_for("login"))
+        
+        # They could be starting a new project or editing an existing
+        # one.
+        project = None
+        new = False
+        # If it's a new project they need to be an admin
+        # if project_id is None and not person.is_admin:
+        #     raise Exception("Admins only")
+
+        if project_id is None and can_person_create_project(person):
+            project = Project(
+                owner = person.id,
+                title = "",
+                authorizations = dict(
+                    {str(person.id): dict({"edit":0, "view":0})}
+                )
+            )
+            new = True
+            # engine.save(project)
+        else:
+            project = engine.find_one(Project, Project.id == ObjectId(project_id))
+            if not project:
+                raise Exception(f"Project {project_id} not found")
+
+            # To do this they either need to be an admin or they need to own the project
+            if not can_person_edit_project(person, project):
+                current_app.logger.info(f"{person.username} attempted to edit {project.id}")
+                return Response("You don't have permission to edit this project", status="403")
+
+        return render_template(
+            "pages/edit_project.html",
+            new = new, project = project, person = person
+        )
+
+    @bp.route("/saveproject", methods = ['POST', 'GET'])
+    @requires_auth
+    def saveproject():
+        "Create a new project or update an existing one"
+
+        person = get_current_person(engine, session)
+        form = get_form()
+
+        tags = {}
+        try:
+            tags_list = form["tags"].split(",")
+            if(tags_list == ""):
+                tags = {}
+            else:
+                tags = dict(zip(tags_list, tags_list))
+        except Exception as e:
+            current_app.logger.exception(e)
+
+        # If there isn't a project id then we're making a new project
+        if not form.get("project_id") and can_person_create_project(person):
+            # We need an owner
+            owner = engine.find_one(Person, Person.username == form["owner"])# .id
+
+            project = Project(
+                title = form["title"],
+                description = form["description"],
+                owner = owner.id,
+                # status = "proposed",
+                # date_created,
+                tags = tags,
+                # samples = [],
+                authorizations = dict({
+                    str(owner.id): dict({"edit":0, "view":0}),
+                    # The person who create the project should also be able
+                    # to see / edit it even if they are not the owner
+                    str(person.id): dict({"edit":0, "view":0})
+                })
+            )
+                
+            engine.save(project)
+            return str(project.id)
+
+        else:
+
+            # We're editing an existing project
+            project = engine.find_one(Project, Project.id == ObjectId(form["project_id"]))
+
+            # Check this person is allowed to do this
+            if can_person_edit_project(person, project):
+                project.title = form["title"]
+                project.description = form["description"]
+                project.tags = tags
+                engine.save(project)
+
+            # They may want to change the owner
+            if form["owner"] and can_change_project_ownership(person, project):
+                owner = engine.find_one(Person, Person.username == form["owner"])
+                if project.id != owner.id:
+                    project.owner = owner.id
+                    engine.save(project)
+
+            return str(project.id)
+
+    @bp.route("/checkowner", methods = ['POST', 'GET'])
+    @requires_auth
+    def checkowner():
+        "Used to check usernames for new projects when they press the check button"
+        person = get_current_person(engine, session)
+        form = get_form()
+        # project = engine.find_one(Project, Project.id == ObjectId(form["project_id"]))
+        # if can_change_project_ownership(person, project):
+        if can_person_create_project(person):
+            found_person = engine.find_one(Person, Person.username == form["username"])
+            person_text = f"{found_person.username} ({form['username']})"
+            return person_text
+        else:
+            return Response("Access Denied", status = 403, mimetype="text/plain")
+
     @bp.route("/project/upload_project_attachment/<project_id>", methods = ["GET", "POST"])
     @requires_auth # needs admin/role check
     def upload_project_attachment(project_id):
@@ -37,6 +239,22 @@ def construct_bp(engine):
                 #     "attachments.attachement_id": 
                 # })
         return redirect(url_for("project.project", project_id = project_id))
+
+    @bp.route("/project/delete_project/<project_id>")
+    @requires_auth
+    def project_delete(project_id):
+    # Implement "are you sure? dialog"
+        project_id = ObjectId(project_id)
+        person = get_current_person(engine, session)
+        project = engine.find_one(Project, Project.id == project_id)
+        if can_person_edit_project(person, project):
+            engine.delete(project)
+        else:
+            return Response(
+                "Not allowed to edit this project",
+                status="403", mimetype="text/plain"
+            )
+        return redirect(url_for("index.index", project_id = project_id))
 
     @bp.route("/project/delete_attachment/<project_id>/<attachment_id>")
     @requires_auth
