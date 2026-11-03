@@ -11,4 +11,4 @@ OAUTH_ENDPOINTS:
     revocation: http://localhost:8081/realms/app-dev/protocol/openid-connect/revoke
     client_kwargs:
       scope: openid profile email
-UPLOAD_FOLDER: "uploads"
+UPLOAD_FOLDER: "data/uploads"

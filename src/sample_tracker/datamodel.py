@@ -109,11 +109,17 @@ class Authorization(Model):
     roles: set[Roles]
 
 class File(Model):
-    path: Path
+    path: str # Path
     size: int | None = None # bytes
     hash: str | None = None
     hashalgo: str = Field(default = "sha256") # defined list from hashlib?
     
+    def get_filename(self):
+        return Path(self.path).name
+
+    def get_human_size(self):
+        return human_readable_filesize(self.size)
+
     @model_validator(mode="before")
     @classmethod
     def get_hash(cls, instance):
@@ -141,14 +147,14 @@ class File(Model):
     def get_filesize(cls, instance):
         size = instance.get("size")
         try:
-            comp_size = instance.get("path").stat().st_size
+            comp_size = Path(instance.get("path")).stat().st_size
         except Exception as e:
             raise ValueError(f"Error computing file size {e}")
         if size is None:
             instance["size"] = comp_size
             return instance
         else:
-            comp_size = instance.get("path").stat().st_size
+            comp_size = Path(instance.get("path")).stat().st_size
             if instance["size"] != comp_size:
                 raise Exception(f"Provided file size of {instance.size} is not equal to size of file at the provided path {comp_size}")
         return instance
