@@ -66,6 +66,10 @@ services:
         # See the example error at the end of this file, also note the comments
         # in the volume section on how to mount the h2 database if you need to
         # troubleshoot db persistence issues
+        
+        # NB you may need to delete the default JS policy from the realm config
+        # if you see this: error: script upload is disabled when importing
+        # https://github.com/keycloak/keycloak/discussions/28019
 
         # Export ---
         # NB Export does not work on a running server instance so you cannot
