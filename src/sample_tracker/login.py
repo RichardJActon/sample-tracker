@@ -59,6 +59,7 @@ def construct_bp(oauth, oauth_providers, engine):
                     email_verified = bool(userinfo.get("email_verified") or False),
                     last_authenticated = datetime.fromtimestamp(userinfo.get("auth_time"), tz = timezone.utc),
                 )
+                engine.save(person)
                 # person = engine.find_one(Person, Person.username == userinfo["preferred_username"])
                 raise Exception(
                     f"Person not found in database, created new Person: {userinfo['preferred_username']}"
