@@ -13,6 +13,8 @@ from typing import (
 )
 import hashlib
 from pathlib import Path
+from markdown import markdown
+from justhtml import JustHTML
 from datetime import (
     datetime,
     timezone,
@@ -30,16 +32,60 @@ class ProjectStatus(str, Enum):
     active = "Active"
     completed = "Completed"
 
+# class Roles(str, Enum):
+class Authorizations(str, Enum):
+    move = "Move"
+    view = "View"
+    edit = "Edit"
+    admin = "Admin"
+
 class Project(Model):
+    """
+    Args:
+        title (str):
+        description: (str | None): 
+        date_created (datetime):
+        status (ProjectStatus):
+        restrictions (set[ObjectId] | None):
+        samples (set[ObjectId] | None): 
+        attachments (set[ObjectId] | None):
+        
+    """
     title: str
-    description: str
+    description: str = "" # None
     date_created: datetime = Field(default_factory = naive_utc_timestamp)
     status: ProjectStatus = Field(default = ProjectStatus.proposed)
-    restrictions: set[ObjectId] | None # = []
-    samples: set[ObjectId] | None
-    attachments: set[ObjectId] | None # File
+    restrictions: list[ObjectId] | None = None # Restriction
+    restriction_details: dict = {}
+    samples: list[ObjectId] = [] #| None = None
+    attachments: list[ObjectId] = [] # File
+    tags: dict[str,str] = {} # use set
+    owner: ObjectId # Id of person, the creator by default
+    # authorisatons: dict[str, set[ObjectId]] # permission name and a set of those who have it.
+    authorizations: dict[str, dict[str, int]] # permission name and a set of those who have it.
+    # authorizations: dict[ObjectId, dict[Authorizations, int]] # permission name and a set of those who have it.
+    def get_tags(self):
+        return {k for k in self.tags.keys()}
+
+    def get_description_html(self):
+        project_description_raw = markdown(self.description)
+        return JustHTML(project_description_raw, fragment = True).to_html(pretty=False)
+
+
     
 class Person(Model):
+    """
+    :Args:
+        username (str):
+        given_name (str):
+        family_name (str):
+        email (str):
+
+    :Example:
+        >>> ex_person = Person(username = "test", given_name = "test", family_name = "testington", email = "test@example.com")
+        >>> ex_person.username
+        'test'
+    """
     username: str
     given_name: str
     family_name: str
@@ -48,6 +94,14 @@ class Person(Model):
     disabled: bool = Field(default = False)
     last_authenticated: datetime | None = None
     date_created: datetime = Field(default_factory = naive_utc_timestamp)
+    roles: dict[Role,int] = {} # set()
+    # can_approve: set[str] | None = None # Resctiction Names
+    
+    def get_roles(self):
+        return {k.value for k in self.roles.keys()}
+    
+    def get_roles_csl(self):
+        return ", ".join(self.roles.keys())
 
 class Team(Model):
     members: set[ObjectId] # ObjectId str & usernames?
@@ -91,22 +145,15 @@ class Location(Model):
     container: str
     restrictions_suitable_for: set[ObjectId]
 
+# class Authorization(Model):
+#     person: ObjectId  # Person
+#     project: ObjectId # Project
+#     roles: set[Roles]
 class ApprovalStatus(str, Enum):
     approved = "Approved"
     pending = "Pending"
     denied = "Denied"
     
-class Roles(str, Enum):
-    mover = "Move"
-    viewer = "View"
-    approve_hta = "Approve HTA"
-    approve_radioactivity = "Radioactivity"
-    approve_cat2 = "Approve Cat2"
-
-class Authorization(Model):
-    person: ObjectId  # Person
-    project: ObjectId # Project
-    roles: set[Roles]
 
 class File(Model):
     path: str # Path
