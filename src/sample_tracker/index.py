@@ -1,4 +1,5 @@
 # Index ----
+from sample_tracker.permissions import can_person_create_project
 from sample_tracker.auth import requires_auth
 from sample_tracker.datamodel import (
     Project,
@@ -22,12 +23,20 @@ def construct_bp(engine):
             Person, Person.username == session["user"]["preferred_username"]
         )
         # Get recent projects
-        recent_projects = list(engine.find(
-            Project, Project.owner == person.id,
-            sort = query.desc(Project.date_created), limit = 10
-        ))
+        try:
+            recent_projects = list(engine.find(
+                Project, Project.owner == person.id,
+                sort = query.desc(Project.date_created), limit = 10
+            ))
+        except Exception as e:
+            recent_projects = []
+            current_app.logger.exception(e)
+            
+        can_create_projects = can_person_create_project(person)
+        
         return render_template(
             "pages/index.html",
-            person = person, projects = recent_projects
+            person = person, can_create_projects = can_create_projects,
+            projects = recent_projects
         )
     return bp
