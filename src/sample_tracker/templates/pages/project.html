@@ -1,32 +1,64 @@
 {% extends "base.html" %}
 
 {% block buttons %}
-<a href="{{ url_for('index.index')}}" class="btn btn-primary" role="button">Home</a>
-{% if can_edit %}
-<a href="{{ url_for('project.editproject')}}" class="btn btn-warning mt-3" role="buttoon">New Project</a>
+<a
+	href="{{ url_for('index.index')}}"
+	class="btn btn-primary" role="button"
+>
+	Home
+</a>
+{% if can_create %}
+<a
+	href="{{ url_for('project.editproject')}}"
+	class="btn btn-warning mt-3" role="button"
+>
+New Project
+</a>
 {% endif %}
-<a href="{{ url_for('pages.account')}}" class="btn btn-primary" role="button">Account</a>
-<a href="{{ url_for('login.logout') }}" class="btn btn-danger" role="button">Log Out</a>
+<a
+	href="{{ url_for('pages.account')}}"
+	class="btn btn-info"
+	role="button"
+>
+Account
+</a>
+{% if person.is_approver() %}
+<a href="{{ url_for('approval.approvals') }}"
+   class="btn btn-warning"
+   role="button"
+>
+	Approvals
+</a>
+{% endif %}
+<a
+	href="{{ url_for('login.logout') }}"
+	class="btn btn-danger" role="button"
+>
+Log Out
+</a>
 {% endblock %}
 
 {% block content %}
 <div class="row">
-	<h3 class="text-center">{{project.title}} (Project {{project.project_id}})</h3>
+	<h3 class="text-center">{{project.title}}</h3>
+	<p class="text-center">(ID: {{project.id}})</p>
 </div>
 
 <div class="row">
 	<p class="text-center">
-		<span class="status {{ project.status.value }}">
+		Status:
+		<span class="badge text-bg-{{- project.status.get_colour_class() -}}">
 			{{ project.status.value }}
 		</span>
-		| {{ project.owner }}
+		| Owner: {{ project_owner }}
 		<!-- | <button type="button" class="btn btn-sm btn-primary"> -->
 		<!-- Share -->
 		<!-- </button> | <button type="button" class="btn btn-sm btn-warning"> -->
 		<!-- Budget -->
-		<!-- </button> | <a role="button" type="button" class="btn btn-sm btn-warning" href="/editproject/{{project.id}}"> -->
-		<!-- </button> -->
-		| <a role="button" class="btn btn-sm btn-warning" href="/editproject/{{project.id}}">
+		| <a
+			role="button" class="btn btn-sm btn-warning"
+			href="/editproject/{{project.id}}"
+		>
 			Edit
 		</a>
 	</p>
@@ -36,23 +68,38 @@
 	<div class="accordion" id="accordionPanelsStayOpenExample">
 		<div class="accordion-item">
 			<h2 class="accordion-header">
-				<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseDescription" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
+				<button
+					class="accordion-button" type="button" data-bs-toggle="collapse"
+					data-bs-target="#panelsStayOpen-collapseDescription"
+					aria-expanded="true" aria-controls="panelsStayOpen-collapseOne"
+				>
 					Description
 				</button>
 			</h2>
-			<div id="panelsStayOpen-collapseDescription" class="accordion-collapse collapse show">
+			<div
+				id="panelsStayOpen-collapseDescription"
+				class="accordion-collapse collapse show"
+			>
 				<div class="accordion-body">
-					<pre>{{ project_description|safe }}</pre>
+					<pre>{{ project.get_description_html()|safe }}</pre>
 				</div>
 			</div>
 		</div>
 		<div class="accordion-item">
 			<h2 class="accordion-header">
-				<button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseRestrictions" aria-expanded="true" aria-controls="panelsStayOpen-collapseRestrictions">
+				<button
+					class="accordion-button" type="button" data-bs-toggle="collapse"
+					data-bs-target="#panelsStayOpen-collapseRestrictions"
+					aria-expanded="true"
+					aria-controls="panelsStayOpen-collapseRestrictions"
+				>
 					Restrictions
 				</button>
 			</h2>
-			<div id="panelsStayOpen-collapseRestrictions" class="accordion-collapse collapse show">
+			<div
+				id="panelsStayOpen-collapseRestrictions"
+				class="accordion-collapse collapse show"
+			>
 				<div class="accordion-body">
 					<div class="row">
 						<table class="table">
@@ -62,19 +109,44 @@
 									<th scope="col">Details</th>
 									<th scope="col">Approval Status</th>
 									<th scope="col">Request Approval</th>
+									{% if person.is_admin() or person.is_approver() or any_unsubmitted %}
+									<th scope="col">Remove</th>
+									{% endif %}
 								</tr>
 							</thead>
 							<tbody>
 								{% if project.restrictions %}
 								{% for r in project.restrictions %}
 								<tr>
-									<td>{{ project.id }}-{{sample.id}}</td>
-									<td>{{ sample.name }}</td>
-									<td>{{ sample.state }}</td>
-									<td>{{ sample.organism }}</td>
-									<td>{{ sample.status }}</td>
-									<td><button class="btn btn-sm deletesample btn-danger">Delete</button></td>
-									<td><button class="btn btn-sm editsample btn-success">Edit</button></td>
+									<td class="restriction">{{ r.value }}</td>
+									<td>
+										<a
+											href={{ url_for('project.restrictions', project_id = project.id, restriction = r.value)}}
+										>
+											details
+										</a>
+									</td>
+									<td>
+										<span class="badge text-bg-{{- approval_status(project.restriction_details[r.value]['status']).get_colour_class() -}}">
+										{{project.restriction_details[r.value]["status"]}}
+										</span>
+									</td>
+									<td>
+										<button class="btn btn-sm editsample btn-primary">
+											Submit
+										</button>
+									</td>
+									{% if person.is_admin() or r.value in person.get_roles() or project.restriction_details.get(r.value).get('status') == "Not Submitted" %}
+									<td>
+										<button
+											class="btn btn-sm remove-restriction-button btn-danger"
+											id="{{project.id}}-{{r.name}}"
+											data-href="{{url_for('project.remove_restriction', project_id = project.id, restriction = r.name)}}"
+										>
+											Delete
+										</button>
+									</td>
+									{% endif %}
 								</tr>
 								{% endfor %}
 								{% else %}
@@ -85,16 +157,32 @@
 							</tbody>
 						</table>
 					</div>
+					<div class="row">
+						<button
+							class="btn btn-primary" id="add_restriction"
+							style="width:25%;margin-left: auto;margin-right: auto;"
+						>
+							Add Restrictions
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
 		<div class="accordion-item">
 			<h2 class="accordion-header">
-				<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseSamples" aria-expanded="false" aria-controls="panelsStayOpen-collapseTwo">
+				<button
+					class="accordion-button collapsed" type="button"
+					data-bs-toggle="collapse"
+					data-bs-target="#panelsStayOpen-collapseSamples"
+					aria-expanded="false" aria-controls="panelsStayOpen-collapseTwo"
+				>
 					Samples
 				</button>
 			</h2>
-			<div id="panelsStayOpen-collapseSamples" class="accordion-collapse collapse">
+			<div
+				id="panelsStayOpen-collapseSamples"
+				class="accordion-collapse collapse"
+			>
 				<div class="accordion-body">
 					<div class="row">
 						<table class="table">
@@ -129,8 +217,16 @@
 									<td>{{ tag }}</td>
 									{% endfor %}
 									<td>{{ sample.status }}</td>
-									<td><button class="btn btn-sm deletesample btn-danger">Delete</button></td>
-									<td><button class="btn btn-sm editsample btn-success">Edit</button></td>
+									<td>
+										<button class="btn btn-sm deletesample btn-danger">
+											Delete
+										</button>
+									</td>
+									<td>
+										<button class="btn btn-sm editsample btn-success">
+											Edit
+										</button>
+									</td>
 								</tr>
 								{% endfor %}
 							</tbody>
@@ -138,7 +234,10 @@
 					</div>
 				</div>
 				<div class="row">
-					<button class="btn btn-primary" id="add_sample" style="width:25%;margin-left: auto;margin-right: auto;">
+					<button
+						class="btn btn-primary" id="add_sample"
+						style="width:25%;margin-left: auto;margin-right: auto;"
+					>
 						Add Sample
 					</button>
 				</div>
@@ -146,18 +245,28 @@
 		</div>
 		<div class="accordion-item">
 			<h2 class="accordion-header">
-				<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="false" aria-controls="panelsStayOpen-collapseThree">
+				<button
+					class="accordion-button collapsed" type="button"
+					data-bs-toggle="collapse"
+					data-bs-target="#panelsStayOpen-collapseThree"
+					aria-expanded="false" aria-controls="panelsStayOpen-collapseThree"
+				>
 					Timeline
 				</button>
 			</h2>
-			<div id="panelsStayOpen-collapseThree" class="accordion-collapse collapse">
+			<div
+				id="panelsStayOpen-collapseThree" class="accordion-collapse collapse"
+			>
 				<div class="accordion-body">
 					<div class="row">
 						<h3 class="text-center mt-5">Timeline</h3>
 					</div>
 					{% if can_edit %}
 					<div class="row">
-						<button class="btn btn-primary" id="add_event" style="width:25%;margin-left: auto;margin-right: auto;">
+						<button
+							class="btn btn-primary" id="add_event"
+							style="width:25%;margin-left: auto;margin-right: auto;"
+						>
 							Add Event
 						</button>
 					</div>
@@ -167,11 +276,18 @@
 		</div>
 		<div class="accordion-item">
 			<h2 class="accordion-header">
-				<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseFour" aria-expanded="false" aria-controls="panelsStayOpen-collapseFour">
+				<button
+					class="accordion-button collapsed" type="button"
+					data-bs-toggle="collapse"
+					data-bs-target="#panelsStayOpen-collapseFour"
+					aria-expanded="false" aria-controls="panelsStayOpen-collapseFour"
+				>
 					Attachments
 				</button>
 			</h2>
-			<div id="panelsStayOpen-collapseFour" class="accordion-collapse collapse">
+			<div
+				id="panelsStayOpen-collapseFour" class="accordion-collapse collapse"
+			>
 				<div class="accordion-body">
 					<div class="row">
 						<table class="table">
@@ -181,15 +297,15 @@
 									<th scope="col">Size</th>
 									<!-- <th scope="col">Hash</th> -->
 									<!-- <th scope="col">Tags</th> -->
-									<th scope="col">Delete</th>
 									<th scope="col">Download</th>
+									<th scope="col">Delete</th>
 								</tr>
 							</thead>
 							<tbody>
 								{% if project.attachments %}
 								{% for attachment in attachments %}
 								<tr>
-									<td>{{ attachment.get_filename() }}</td>
+									<td class="filename">{{ attachment.get_filename() }}</td>
 									<!-- <td>{{ attachment.size }}</td> -->
 									<td>{{ attachment.get_human_size() }}</td>
 									<!-- <td>{{ attachment.hash }}</td> -->
@@ -197,18 +313,37 @@
 									<!-- <td>{{ attachment.tags[tag] }}</th> -->
 									<!-- {% endfor %} -->
 									<td>
-										{% if can_edit %}
-										<a class="button btn btn-sm deleteattachment btn-danger" href="{{url_for('project.project_delete_attachment', project_id = project.id, attachment_id = attachment.id)}}">
-											Delete
-										</a>
-										{% else %}
-										<button class="btn btn-sm deleteattachment btn-danger" disabled=true>Delete</button>
-										{% endif %}
-									</td>
-									<td>
-										<a class="button btn btn-sm downloadattachment btn-success" href="{{url_for('project.project_download_attachment', project_id = project.id, attachment_id = attachment.id)}}">
+										<a
+											class="button btn btn-sm downloadattachment btn-success"
+											href="{{url_for('project.project_download_attachment', project_id = project.id, attachment_id = attachment.id)}}"
+										>
 											Download
 										</a>
+									</td>
+									<td>
+										{% if can_edit %}
+										<button
+											class="btn btn-sm delete-attachment-button btn-danger"
+											id="{{project.id}}-{{attachment.id}}"
+											data-href="{{url_for('project.project_delete_attachment', project_id = project.id, attachment_id = attachment.id)}}"
+										>
+											Delete
+										</button>
+										<!-- <a
+											class="button btn btn-sm deleteattachment btn-danger"
+											href="{{url_for('project.project_delete_attachment', project_id = project.id, attachment_id = attachment.id)}}"
+											data-href="{{url_for('project.project_delete_attachment', project_id = project.id, attachment_id = attachment.id)}}"
+										>
+											Delete
+										</a> --->
+										{% else %}
+										<button
+											class="btn btn-sm deleteattachment btn-danger"
+											disabled=true
+										>
+											Delete
+										</button>
+										{% endif %}
 									</td>
 								</tr>
 								{% endfor %}
@@ -222,48 +357,139 @@
 					</div>
 					{% if can_edit %}
 					<div class="row">
-						<form method=post enctype=multipart/form-data action="{{url_for('project.upload_project_attachment', project_id = project.id)}}">
-							<!-- <form method=post enctype=multipart/form-data action="/project/upload_project_attachment/{{project.id}}"> -->
-							<input type=file name=file>
-							<!-- <input type=submit value=Upload class="btn btn-primary" style="width:25%;margin-left: auto;margin-right: auto;"> -->
-							<button type=submit class="btn btn-primary" id="add_attachment" style="width:25%;margin-left: auto;margin-right: auto;">
-								Add Attachment
-							</button>
-						</form>
+						<div class="mb-3">
+							<form
+								method=post
+								enctype=multipart/form-data
+								action="{{url_for('project.upload_project_attachment', project_id = project.id)}}"
+							>
+								<!-- <form method=post enctype=multipart/form-data action="/project/upload_project_attachment/{{project.id}}"> -->
+								<label for="upload-project-attachment" class="form-label">
+								</label>
+								<input
+									class="form-control"
+									type=file name=file
+									id="upload-project-attachment"
+								>
+								<br>
+								<!-- <input type=submit value=Upload class="btn btn-primary" style="width:25%;margin-left: auto;margin-right: auto;"> -->
+								<button
+									type=submit class="btn btn-primary" id="add_attachment"
+									style="width:25%;margin-left: auto;margin-right: auto;"
+								>
+									Add Attachment
+								</button>
+							</form>
+						</div>
 					</div>
 					{% endif %}
+			</div>
+		</div>
+		<div class="accordion-item">
+			<h2 class="accordion-header">
+				<button
+					class="accordion-button collapsed" type="button"
+					data-bs-toggle="collapse"
+					data-bs-target="#panelsStayOpen-users"
+					aria-expanded="false" aria-controls="panelsStayOpen-users"
+				>
+					Users
+				</button>
+			</h2>
+			<div
+				id="panelsStayOpen-users" class="accordion-collapse collapse"
+			>
+				<div class="accordion-body">
+					<div class="row">
+						<div id="user-cards">
+						<h5>Users</h5>
+						{% for userid, auths in project.authorizations.items() %}
+							<div class="card" style="width: 18rem">
+								<div class="card-body">
+									<p class="card-text">
+										<span id="username"><strong>{{users[userid]}}</strong></span>
+										{% for auth in auths.keys() %}
+										<span id="{{auth}}" class="badge text-bg-primary">{{auth}}</span>
+										{% endfor %}
+									</p>
+								</div>
+							</div>
+						{% endfor %}
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
 </div>
 
 <!-- Modal -->
-<div id="editsamplediv" class="modal" tabindex="-1">
-	<div class="modal-dialog modal-dialog-centered">
-		<div class="modal-content">
-			<div class="modal-header text-center">
-				<h2 id="sample_modal_header">Add Sample</h2>
-			</div>
-			<div class="modal-body">
-				<label for="sample_name">Sample Name</label>
-				<input class="form-control" type="text" id="sample_name">
+<!-- <div id="editsamplediv" class="modal" tabindex="-1"> -->
+	<!-- <div class="modal-dialog modal-dialog-centered"> -->
+		<!-- <div class="modal-content"> -->
+			<!-- <div class="modal-header text-center"> -->
+				<!-- <h2 id="sample_modal_header">Add Sample</h2> -->
+			<!-- </div> -->
+			<!-- <div class="modal-body"> -->
+				<!-- <label for="sample_name">Sample Name</label> -->
+				<!-- <input class="form-control" type="text" id="sample_name"> -->
 				<!-- <label for="sample_state">Sample State</label> -->
 				<!-- <input class="form-control" type="text" list="state-list" id="sample_state"> -->
 				<!-- <datalist id="state-list"> -->
 				<!-- <option>Gel Slice</option> -->
-				<!-- <option>Aqueous Solution</option> -->
-				<!-- <option>Dried</option> -->
-				<!-- <option>PAGE Gel</option> -->
-				<!-- <option>Gel Pieces</option> -->
-				<!-- <option>Beads</option> -->
 				<!-- </datalist> -->
 				<!-- <label for="sample_state">Organism</label> -->
 				<!-- <input class="form-control" type="text" id="organism"> -->
-				{#% for k, tag in project.tags.items() %#}
-				<label for="tag_{{k}}">{{tag}}</label>
-				<input class="form-control tag_value_input" type="text" id="tag_{{k}}">
-				{#% endfor %#}
-				<button id="save_sample" type="button" class="form-control btn btn-primary mt-2">
+				<!-- {#% for k, tag in project.tags.items() %#} -->
+				<!-- <label for="tag_{{k}}">{{tag}}</label> -->
+				<!-- <input -->
+					<!-- class="form-control tag_value_input" type="text" id="tag_{{k}}" -->
+				<!-- > -->
+				<!-- {#% endfor %#} -->
+				<!-- <button -->
+					<!-- id="save_sample" type="button" -->
+					<!-- class="form-control btn btn-primary mt-2" -->
+				<!-- > -->
+					<!-- Save -->
+				<!-- </button> -->
+			<!-- </div> -->
+		<!-- </div> -->
+	<!-- </div> -->
+<!-- </div> -->
+
+
+<!-- Modal -->
+<div id="selectRestrictions" class="modal" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header text-center">
+				<h2 id="add_restrictions_header">Add Restrictions</h2>
+			</div>
+			<div class="modal-body">
+				<label for="project_restrictions">Restrictions</label>
+				<!-- <input class="form-control" type="text" list="restrictions-list" id="project_restrictions"> -->
+				<select
+					multiple id="restrictions-list" class="form-control"
+					id="project_restrictions"
+				>
+					{% for r in restrictions %}
+					<option>{{r}}</option>
+					{% endfor %}
+				</select>
+			<div id="add-restrictions-error">
+			</div>
+			</div>
+			<div class="modal-footer">
+				<button
+					id="cancel_add_restrictions" type="button"
+					class="form-control btn btn-primary mt-2" data-bs-dismiss="modal"
+				>
+					Cancel
+				</button>
+				<button
+					id="add_restrictions" type="button"
+					class="form-control btn btn-success mt-2"
+				>
 					Save
 				</button>
 			</div>
@@ -271,8 +497,9 @@
 	</div>
 </div>
 
-<p></p>
+{% include 'confirm-delete-modal.html'%}
 
+<p></p>
 {% endblock %}
 
 {% block js %}

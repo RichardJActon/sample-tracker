@@ -1,11 +1,80 @@
 document.addEventListener("DOMContentLoaded", function() {
     document.getElementById("checkowner").addEventListener("click", checkowner);
     document.getElementById("saveproject").addEventListener("click", saveproject);
+
     document.getElementById("addtag").addEventListener("click", add_tag);
     document.querySelectorAll(".tagclose").forEach(function(el) {
         el.addEventListener("click", remove_tag)
     });
+    
+    document.getElementById("user-add").addEventListener("change", current_permissions);
+    document.getElementById("add-user").addEventListener("click", update_user_auth);
+    
 })
+
+function update_user_auth(x, remove = false) {
+    // NB require other form updates to be saved before updating user auth
+    const form = document.getElementById("project-auth")
+    let formData = new FormData(form)
+    const project_id = location.pathname.split("/").pop()
+    formData.append("project_id", project_id)
+    // console.log(remove)
+    formData.append("remove", remove)
+    form.preventDefault
+    fetch("/project/update_user_auth",{
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) throw new Error("Request failed");
+        return response.text()
+    })
+    .then(() => {
+        location.reload()
+    })
+    .catch((message) => {
+        console.log(message)
+    })
+}
+
+function remove_user() {
+    update_user_auth(x = null, remove = true)
+}
+
+function current_permissions() {
+    // set the checkboxes and buttons based on the value for any existing user
+    // that is selected, set the buttons to update & remove instead of add for
+    // existing users
+    const user = document.getElementById("username-" + this.value)
+    if (user != null) {
+        const add_user_btn = document.getElementById("add-user")
+        add_user_btn.textContent = " Update User "
+        let remove_btn = document.createElement("button")
+        remove_btn.className = "btn btn-danger btn-sm"
+        remove_btn.id = "remove-user"
+        remove_btn.textContent = " Remove User "
+        add_user_btn.after(remove_btn)
+        document.getElementById("remove-user").addEventListener("click", remove_user)
+        
+        let edit = document.getElementById("set-edit")
+        edit.checked = false
+        let view = document.getElementById("set-view")
+        view.checked = false
+        user.parentElement.parentElement.querySelectorAll(".auth").forEach(x => {
+            if (x.textContent == "edit") {
+                edit.checked = true
+                return
+            }
+            if (x.textContent == "view") {
+                view.checked = true
+                return
+            }
+        })
+    } else {
+        document.getElementById("add-user").textContent = " Add User "
+        document.getElementById("remove-user")?.remove()
+    }
+}
 
 // let image_upload_endpoint = "/upload_project_attachment/" + location.pathname.split("/").pop()
 const easyMDE = new EasyMDE({
