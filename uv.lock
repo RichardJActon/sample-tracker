@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10, <3.13"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -679,6 +679,15 @@ wheels = [
 ]
 
 [[package]]
+name = "opinionated-mixins"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/93/c8/aae341d8e6efce29f8cde2bd721d06644522ecb0908c1d29a1980efbc1dd/opinionated_mixins-0.2.0.tar.gz", hash = "sha256:20b764f7ba7116d4c5d6990bde14736b9ad3f7bc250bae09be28bb487d0723de", size = 64165, upload-time = "2026-10-16T08:05:32.627Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/95/6f/8bc18dbd01c9827f2d88d08f8c280f6eb00fa7bd18651da8b7067aef7ff8/opinionated_mixins-0.2.0-py3-none-any.whl", hash = "sha256:b293d9915eb7bed7a2230038fda7eda74d48ce387aaf5e0cedc68e48be05e003", size = 46979, upload-time = "2026-10-16T08:05:31.181Z" },
+]
+
+[[package]]
 name = "packaging"
 version = "26.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1069,6 +1078,7 @@ dependencies = [
     { name = "markdown", version = "3.10.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "markdown", version = "3.11.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "odmantic" },
+    { name = "opinionated-mixins" },
     { name = "pydantic", extra = ["email"] },
     { name = "pyyaml" },
     { name = "requests" },
@@ -1096,6 +1106,7 @@ requires-dist = [
     { name = "justhtml", specifier = ">=3.16.0" },
     { name = "markdown", specifier = ">=3.10.3" },
     { name = "odmantic", specifier = ">=1.1.0" },
+    { name = "opinionated-mixins", specifier = ">=0.2.0" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.14.1" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "requests", specifier = ">=2.34.2" },

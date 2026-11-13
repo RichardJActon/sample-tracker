@@ -12,3 +12,6 @@ OAUTH_ENDPOINTS:
     client_kwargs:
       scope: openid profile email
 UPLOAD_FOLDER: "data/uploads"
+APP_VERSION_INFO:
+  TAG: "0.0.0-9000"
+  HASH: "d8863a3"  

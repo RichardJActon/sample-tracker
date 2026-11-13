@@ -22,6 +22,15 @@ from sample_tracker.utility import (
     naive_utc_timestamp,
     project_slug_gen,
 )
+import os
+import yaml
+from pathlib import Path
+from opinionated_mixins.contrib.odmantic.activity import ODManticMixinMetaclass
+
+# load config to get app version information
+with open(Path(os.environ.get("APP_CONFIG_PATH", "config.yaml")).resolve(), "r") as f:
+    config = yaml.load(f, Loader=yaml.Loader)
+
 class EnumExtra():
     """
     Adds simple names & values methods to a Enum class to make it easy
@@ -88,6 +97,11 @@ class Restriction(EnumExtra, str, Enum):
     BSL2 = "BSL-2" # "Biosafety Level 2"
     Radiation = "Radiation" # "Radiological Protection"
 
+class AppVersionInfo(metaclass=ODManticMixinMetaclass):
+    version_tag: str = Field(default = config.get("APP_VERSION_INFO", {}).get("TAG", "dev"))
+    commit_hash: str = Field(default = config.get("APP_VERSION_INFO", {}).get("HASH", "dev"))
+
+class Project(AppVersionInfo, Model):
     """
     Args:
         title (str):
@@ -147,7 +161,8 @@ class RestrictionDefinition(Model):
     name: Restriction # str
     description: str
     requirements: dict[str,Any] = Field(default = dict())
-class Person(Model):
+    
+class Person(AppVersionInfo, Model):
     """
     :Args:
         username (str):

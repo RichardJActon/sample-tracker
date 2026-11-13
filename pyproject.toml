@@ -13,6 +13,7 @@ dependencies = [
     "justhtml>=3.16.0",
     "markdown>=3.10.3",
     "odmantic>=1.1.0",
+    "opinionated-mixins>=0.2.0",
     "pydantic[email]>=2.14.1",
     "pyyaml>=6.0.3",
     "requests>=2.34.2",
