@@ -33,6 +33,9 @@ def can_change_project_ownership(person, project):
 def can_person_edit_project(person, project):
     if "edit" in (project.authorizations.get(str(person.id))or []):
         return True
+    elif project.owner == person.id:
+        # NB owners should also be in authorizations, included defensively
+        return True
     else:
         return False
         # raise PermissionError(
@@ -42,6 +45,9 @@ def can_person_edit_project(person, project):
 
 def can_person_see_project(person, project):
     if "view" in (project.authorizations.get(str(person.id)) or []):
+        return True
+    elif project.owner == person.id:
+        # NB owners should also be in authorizations, included defensively
         return True
     else:
         return False
