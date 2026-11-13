@@ -20,6 +20,7 @@ from datetime import datetime
 from sample_tracker.utility import (
     human_readable_filesize,
     naive_utc_timestamp,
+    project_slug_gen,
 )
 class EnumExtra():
     """
@@ -99,6 +100,7 @@ class Restriction(EnumExtra, str, Enum):
         
     """
     title: str
+    slug: str = Field(default_factory=project_slug_gen)
     description: str = "" # None
     date_created: datetime = Field(default_factory = naive_utc_timestamp)
     status: ProjectStatus = Field(default = ProjectStatus.proposed)
