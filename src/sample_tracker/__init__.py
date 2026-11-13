@@ -35,7 +35,7 @@ def create_app():
 
     # Read the main configuration
     app.config.from_file(
-        Path().absolute() / config_path,
+        Path().resolve() / config_path,
         load = lambda s: yaml.load(s, Loader = yaml.Loader)
     )
     # Read any environment variables which might overrule the config file
