@@ -141,6 +141,10 @@ class Role(EnumExtra, str, Enum):
         return colour_class_map.get(self.value)
 
     
+class RestrictionDefinition(Model):
+    name: Restriction # str
+    description: str
+    requirements: dict[str,Any] = Field(default = dict())
 class Person(Model):
     """
     :Args:

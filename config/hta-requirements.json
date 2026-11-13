@@ -1,0 +1,150 @@
+{
+    "collections": {
+        "contact-info": {
+            "name": "Contact",
+            "elements": {
+                "name": {
+                    "type": "text",
+                    "data": {
+                        "label": "Name",
+                        "placeholder": "Enter Your Name",
+                        "required": "true"
+                    }
+                },
+                "email": {
+                    "type": "text",
+                    "data": {
+                        "label": "email",
+                        "required": "true",
+                        "style": "email"
+                    }
+                }
+            },
+            "displayOrder": [ "name", "email" ]
+        },
+        "ethics": {
+            "name": "ethics",
+            "elements": {
+                "rec": {
+                    "type": "checkbox",
+                    "style": "switch",
+                    "required": "true",
+                    "data": {
+                        "options": {
+                            "options": {
+                                "A": { "label": "A"},
+                                "B": { "label": "B"},
+                                "C": { "label": "C"}
+                            },
+                            "displayOrder": ["A","B","C"]
+                        },
+                        "label": "Do you have ethics approval?",
+                        "description": "Do you have a REC?"
+                    }
+                },
+                "item": {
+                    "type": "checkbox",
+                    "style": "switch",
+                    "required": "true",
+                    "data": {
+                        "options": {
+                            "options": {
+                                "A": { "label": "A"},
+                                "B": { "label": "B"},
+                                "C": { "label": "C"}
+                            },
+                            "displayOrder": ["A","B","C"]
+                        },
+                        "label": "check me",
+                        "description": "Do as instructed"
+                    }
+                }
+            },
+            "displayOrder": [ "rec", "item" ]
+        },
+        "project-details": {
+            "name": "Project Details",
+            "elements": {
+                "number-of-samples": {
+                    "type": "number",
+                    "data": {
+                        "label": "Number Of Samples",
+                        "min": 0,
+                        "max": 1000
+                    }
+                },
+                "description": {
+                    "type": "textarea",
+                    "data": {
+                        "label": "Description",
+                        "rows": 10,
+                        "cols": 30,
+                        "placeholder": "A description",
+                        "required": "true"
+                    }
+                },
+                "document": {
+                    "type": "file",
+                    "data": {
+                        "label": "document",
+                        "required": "true",
+                        "accept": "image/*,.pdf",
+                        "description": "a completed form"
+                    }
+                },
+                "radio": {
+                    "type": "radio",
+                    "data": {
+                        "label": "which",
+                        "description": "which option?",
+                        "options": {
+                            "options": {
+                                "A": { "label": "A"},
+                                "B": { "label": "B"},
+                                "C": { "label": "C"}
+                            },
+                            "displayOrder": ["A","B","C"]
+                        },
+                        "required": "false"
+                    }
+                },
+                "select": {
+                    "type": "select",
+                    "data": {
+                        "label": "singleselect",
+                        "description": "which option?",
+                        "options": {
+                            "options": {
+                                "A": { "label": "A"},
+                                "B": { "label": "B"},
+                                "C": { "label": "C"}
+                            },
+                            "displayOrder": ["A","B","C"]
+                        },
+                        "required": "false"
+                    }
+                },
+                "multiselect": {
+                    "type": "select",
+                    "data": {
+                        "label": "mutliselect",
+                        "multiple": "true",
+                        "description": "which options?",
+                        "options": {
+                            "options": {
+                                "A": { "label": "A"},
+                                "B": { "label": "B"},
+                                "C": { "label": "C"}
+                            },
+                            "displayOrder": ["A","B","C"]
+                        },
+                        "required": "false"
+                    }
+                }
+            },
+            "displayOrder": ["number-of-samples", "description", "document", "radio", "select", "multiselect"]
+        }
+    },
+    "displayOrder": [ "contact-info", "ethics", "project-details"],
+    "assets": {}
+}
