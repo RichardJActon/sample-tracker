@@ -1,0 +1,17 @@
+MONGO:
+  HOST: 127.0.0.1
+  PORT: 27018
+  DATABASE: sampletracking
+  USER: appuser
+  AUTH_SOURCE: admin
+OAUTH_ENDPOINTS:
+  testing:
+    client_id: app
+    server_metadata_url: http://localhost:8081/realms/app-dev/.well-known/openid-configuration
+    revocation: http://localhost:8081/realms/app-dev/protocol/openid-connect/revoke
+    client_kwargs:
+      scope: openid profile email
+UPLOAD_FOLDER: "data/uploads"
+APP_VERSION_INFO:
+  TAG: "0.0.0-9000"
+  HASH: "d8863a3"  

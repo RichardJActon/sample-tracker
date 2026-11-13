@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+	<div class="row justify-content-center" style="height: 100vh;">
+		<div class="col-sm-4 align-self-center border text-center">
+			<p>Choose an Oauth Provider</p>
+			{% for provider in oauth_providers %}
+			<a href="/oauth_login/{{provider}}" class="btn btn-info" role="button">
+				{{ provider }}
+			</a>
+			{% endfor%}
+			<p></p>
+		</div>
+	</div>
+</div>
+{% endblock %}

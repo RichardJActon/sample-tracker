@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block buttons %}
+<a href="{{ url_for('index.index')}}" class="btn btn-primary" role="button">Home</a>
+<a href="{{ url_for('pages.account')}}" class="btn btn-primary" role="button">Account</a>
+<a href="{{ url_for('login.logout') }}" class="btn btn-danger" role="button">Log Out</a>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+	<h3 class="text-center">{{project.title}} (Project {{project.id}})</h3>
+</div>
+
+<div class="row">
+	<p class="text-center">
+		<span class="status {{ project.status.value }}">
+			{{ project.status.value }}
+		</span>
+		| {{ project.owner }}
+	</p>
+</div>
+{% set requirements = restriction_definition.requirements%}
+{% set form_data = project.restriction_details[restriction].form_data %}
+<form id="main-form" method="POST">
+</form>
+<div class="row">
+	<div class="accordion" id="form-container">
+		{% for section_id in requirements.displayOrder %}
+		{% set section = requirements.collections[section_id] %}
+		<div class="accordion-item">
+			<h2 class="accordion-header">
+				<button
+					class="accordion-button"
+					type="button"
+					data-bs-toggle="collapse"
+					data-bs-target="#{{section_id}}"
+					aria-expanded="true"
+					aria-controls="panelsStayOpen-{{section_id}}"
+				>
+					{{section.name}}
+				</button>
+			</h2>
+			<div id="{{section_id}}" class="accordion-collapse collapse show">
+				<div class="accordion-body">
+						{% for element_id in section.displayOrder %}
+						{% set element = section.elements[element_id] %}
+						
+						{%
+							set type2divclass = {
+								"checkbox": "form-check",
+								"text": "",
+								"textarea": "",
+								"file": "",
+								"number": "form-outline"
+							}
+						%}
+						{%
+							set type2labelclass = {
+								"checkbox": "form-check-label",
+								"text": "form-label",
+								"textarea": "form-label",
+								"file": "form-label",
+								"number": "form-label"
+							}
+						%}
+						{%
+							set type2inputclass = {
+								"checkbox": "form-check-input",
+								"text": "form-control",
+								"textarea": "form-control",
+								"file": "form-control",
+								"radio": "form-check-input",
+								"number": "form-control",
+								"select": "form-select"
+							}
+						%}
+
+						<div class="mb-3 {{type2divclass.get(element.type)}}">
+							<label
+								for="{{section_id}}-{{element_id}}"
+								class="{{type2labelclass.get(element.type)}}"
+							>
+								{{element.data.label}}
+								{% if element.data.required %}
+									{% if element.data.required == "true" %}
+									<span class="text-danger">*</span>
+									{% endif%}
+								{% endif%}
+							</label>
+							{% if element.type == "radio" %}
+								{% for option_id in element.data.options.displayOrder %}
+									{% set option = element.data.options.options[option_id] %}
+									<div class="form-check">
+										<input
+											form="main-form"
+											class="{{type2inputclass.get(element.type)}}"
+											type="{{element.type}}"
+											name="{{section_id}}_{{element_id}}"
+											value="{{option_id}}"
+											id="{{section_id}}-{{element_id}}-{{option_id}}"
+											{% if form_data.get(section_id, {}).get(element_id, '') == option_id %}
+											checked
+											{% endif %}
+										>
+										<label
+											class="{{type2labelclass.get(element.type)}}"
+											for="{{section_id}}-{{element_id}}-{{option_id}}"
+										>
+											{{option.label}}
+										</label>
+									</div>
+								{% endfor %}
+							{% elif element.type == "checkbox" %}
+								{% for option_id in element.data.options.displayOrder %}
+									{% set option = element.data.options.options[option_id] %}
+									<div class="form-check">
+										<input
+											form="main-form"
+											class="{{type2inputclass.get(element.type)}}"
+											type="{{element.type}}"
+											name="{{section_id}}_{{element_id}}[]"
+											value="{{option_id}}"
+											id="{{section_id}}-{{element_id}}-{{option_id}}"
+											{% if option_id in form_data.get(section_id, {}).get(element_id, '') %}
+												checked
+											{% endif %}
+										>
+										<label
+											class="{{type2labelclass.get(element.type)}}"
+											for="{{section_id}}-{{element_id}}-{{option_id}}"
+										>
+											{{option.label}}
+										</label>
+									</div>
+								{% endfor %}
+							{% elif element.type == "select" %}
+								<select
+									form="main-form"
+									{% if element.data.multiple %}
+									multiple
+									name="{{section_id}}_{{element_id}}[]"
+									{% else %}
+									name="{{section_id}}_{{element_id}}"
+									{% endif %}
+									id="{{section_id}}-{{element_id}}"
+									class="{{type2inputclass.get(element.type)}}"
+									aria-label="{{element.data.label}}"
+								>
+								{% for option_id in element.data.options.displayOrder %}
+									{% set option = element.data.options.options[option_id] %}
+										{% if option_id in form_data.get(section_id, {}).get(element_id, '') %}
+										<option value="{{option_id}}" selected>{{option.label}}</option>
+										{% else %}
+										<option value="{{option_id}}">{{option.label}}</option>
+										{% endif %}
+									{% endfor %}
+								</select>
+							{% elif element.type == "textarea" %}
+							<textarea
+								form="main-form"
+								class="{{type2inputclass.get(element.type)}}"
+								id="{{section_id}}-{{element_id}}"
+								name="{{section_id}}_{{element_id}}"
+								{% if element.data.rows %}
+									rows={{element.data.rows}}
+								{% endif %}
+								{% if element.data.cols %}
+									cols={{element.data.cols}}
+								{% endif %}
+							>
+							{{- form_data.get(section_id, {}).get(element_id, '') -}}
+							</textarea>
+							{% elif element.type == "file" %}
+							<form
+								id="{{section_id}}_{{element_id}}_fileupload"
+								enctype="multipart/form-data"
+								method="POST"
+							>
+							<div class="row">
+									<label>
+									<!-- ... -->
+									</label>
+								<div class="col-md-6">
+									<input
+										type="file"
+										class="{{type2inputclass.get(element.type)}}"
+										name={{section_id}}_{{element_id}}
+										id={{section_id}}_{{element_id}}
+										data-filename="{{ form_data.get(section_id, {}).get(element_id, {}).get('filename', '') }}"
+										{% if element.data.accept %}
+											accept={{element.data.accept}}
+										{% endif %}
+										{% if element.data.required %}
+											required={{element.data.required}}
+										{% endif %}
+									>
+								</div>
+								<div class="col-md-2">
+									<button
+										form="{{section_id}}_{{element_id}}_upload"
+										name="{{section_id}}_{{element_id}}_upload"
+										id="{{section_id}}_{{element_id}}_upload"
+										class="btn btn-primary">
+											Upload
+									</button>
+								</div>
+								<div class="col-md-2">
+									<a
+										form="{{section_id}}_{{element_id}}_delete"
+										name="{{section_id}}_{{element_id}}_delete"
+										id="{{section_id}}_{{element_id}}_delete"
+										{% if form_data.get(section_id, {}).get(element_id, {}).get('filename', false) %}
+										class="button btn btn-danger"
+										{% else %}
+										class="button disabled btn btn-danger"
+										{% endif %}
+									>
+											Delete
+									</a>
+								</div>
+								<div class="col-md-2">
+									<a
+										form="{{section_id}}_{{element_id}}_download"
+										name="{{section_id}}_{{element_id}}_download"
+										id="{{section_id}}_{{element_id}}_download"
+										{% if form_data.get(section_id, {}).get(element_id, {}).get('filename', false) %}
+										class="button btn btn-primary"
+										{% else %}
+										class="button disabled btn btn-primary"
+										{% endif %}
+									>
+											Download
+									</a>
+								</div>
+							</div>
+							</form>
+							{% else %}
+							<!-- setting values for checkboxs -->
+							<input
+								form="main-form"
+								type="{{element.type}}"
+								class="{{type2inputclass.get(element.type)}}"
+								id="{{section_id}}-{{element_id}}"
+								name="{{section_id}}_{{element_id}}"
+								value="{{form_data.get(section_id, {}).get(element_id, '')}}"
+								{% if element.type == "number" %}
+									{% if element.data.min %}
+									min={{element.data.min}}
+									{% endif %}
+									{% if element.data.max %}
+									max={{element.data.max}}
+									{% endif %}
+								{% endif %}
+								{% if element.data.placeholder %}
+									placeholder="{{element.data.placeholder}}"
+								{% endif %}
+									aria-describedby="{{element_id}}"
+								{% if element.data.required %}
+									required={{element.data.required}}
+								{% endif %}
+							>
+							{% endif %}
+							{% if element.data.description %}
+								<div
+									id="{{section_id}}_{{element_id}}_description"
+									class="form-text"
+								>
+								{{element.data.description}}
+								</div>
+							{% endif %}
+						</div>
+						{% endfor %}
+				</div>
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+</div>
+
+<div class="row mt-5">
+	<input
+		form="main-form"
+		id="save"
+		type="submit"
+		class="button btn btn-primary"
+		style="width:25%;margin-left: auto;margin-right: auto;"
+	>
+	<!-- <button id="save" type="button" class="btn btn-primary" style="width:25%;margin-left: auto;margin-right: auto;"> -->
+		<!-- Save -->
+	<!-- </button> -->
+</div>
+
+<div class="row mt-5">
+	<a
+		id="cancel"
+		style="button; width:25%;margin-left: auto;margin-right: auto;"
+		class="btn btn-danger"
+		href="{{url_for('project.project', project_id = project.id)}}"
+	>
+		Cancel
+	</a>
+</div>
+
+<p></p>
+
+<!-- Modal -->
+<div id="selectRestrictions" class="modal" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header text-center">
+				<h2 id="add_restrictions_header">Add Restrictions</h2>
+			</div>
+			<div class="modal-body">
+				<label for="project_restrictions">Restrictions</label>
+				<!-- <input class="form-control" type="text" list="restrictions-list" id="project_restrictions"> -->
+				<select
+					multiple
+					id="restrictions-list"
+					class="form-control"
+					id="project_restrictions"
+				>
+				</select>
+				<div id="add-restrictions-error">
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button
+					id="cancel_add_restrictions"
+					type="button"
+					class="form-control btn btn-primary mt-2"
+					data-bs-dismiss="modal"
+				>
+					Cancel
+				</button>
+				<!-- ajax -->
+				<button
+					id="add_restrictions"
+					type="button"
+					class="form-control btn btn-success mt-2"
+				>
+					Save
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<script src="{{ url_for('static', filename='js/restrictions.js') }}"></script>
+{% endblock %}

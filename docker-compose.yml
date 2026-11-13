@@ -1,0 +1,167 @@
+services:
+  mongodb:
+    image: mongodb/mongodb-community-server:9.0.4-ubi9-slim
+    # image: mongodb/mongodb-community-server:latest
+    user: "${UID:-1000}:${GID:-1000}"
+    container_name: app-mongodb
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27018:27017"
+    volumes:
+      # Note that this db directory must exist and be empty when the container
+      # is started for the first time of the init script which creates the test
+      # database will not be run.
+      #
+      # It is not re-run when the container is
+      # restarted if it finds data here indicating that it has already been
+      # initialised.
+      - ./data/mongodb:/data/db
+      #
+      # scripts ending .sh or .js in this entrypoint directory are run in
+      # alphabetical order on the container's *first* start.
+      # - ./data/scripts:/docker-entrypoint-initdb.d
+      # to use only a specific file link it only:
+      - ./data/scripts/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
+      # the init scripts are run within the container so use internal host and ports
+      # localhost:27017 not those exposed to the system
+      # 
+      # Note environment variables are not easily accessed by from within the
+      # js scripts proccess.env.VAR do not work so it is easiest to use .sh
+      # - ./data/scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      # 
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGODB_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PWD}
+      MONGODB_INITDB_DATABASE: ${MONGO_DATABASE}
+      APP_MONGO__PWD: ${APP_MONGO__PWD}
+      APP_MONGO__DATABASE: ${APP_MONGO__DATABASE}
+      APP_MONGO__USER: ${APP_MONGO__USER}
+      APP_MONGO__AUTH_SOURCE: ${APP_MONGO__AUTH_SOURCE}
+
+
+# Quick-start development setup - NOT for production
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    # looked at using the keycload-config-cli tool: https://adorsys.github.io/keycloak-config-cli/
+    # image: quay.io/keycloak/keycloak:26.5.5
+    # for simpler declarative configuration of the test server
+    # !! still seems to lack individual user level config
+    container_name: app-keycloak-dev
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        set -ex
+        # Initial config ----
+        # On first start whilst configuring development realm and example users use this:
+        
+        # /opt/keycloak/bin/kc.sh start-dev
+        
+        # log into the webUI as the admin user and create test/development config you need manually.
+        # Then stop the container (`docker compose stop`) note `stop` not `down`
+        # by default the keycloak db should be persisted to a docker volume
+        # The export will not work and will throw a confusing error if the db
+        # is not persisted.
+        # `down` should delete the db state but `stop` should not.
+        # See the example error at the end of this file, also note the comments
+        # in the volume section on how to mount the h2 database if you need to
+        # troubleshoot db persistence issues
+        
+        # NB you may need to delete the default JS policy from the realm config
+        # if you see this: error: script upload is disabled when importing
+        # https://github.com/keycloak/keycloak/discussions/28019
+
+        # Export ---
+        # NB Export does not work on a running server instance so you cannot
+        # simply shell into the running container and perform the export.
+        #
+        # When happy with your config you should then be able to restart the
+        # container (`docker compose up -d`)
+        # with only the export command below and the command above commented out.
+        # You will also need to mount the directory that you exporting to
+        # below in the volumes section
+        
+        # /opt/keycloak/bin/kc.sh export --realm app-dev --dir /opt/keycloak/data/import --users realm_file --verbose
+
+        # Once the export has completed, you can verify this in the logs:
+        # `docker compose logs -t -f keycloak`
+        # stop (or `down`) the container, comment out the export command above
+        
+        # NB exporting from the webUI is partial and does not include user level data or credentials
+        # so you cannot create a suitable file to import from the webUI you need
+        # to use the command line approach outlined here.
+        # NB Exporting kc config via a database export or using the API
+        # are preferred approaches in production.
+
+        # General Usage ----
+        # On subsequent starts once you have your desired config use the command
+        # below, comment out the export command above, and ensure the relevent
+        # file or directory is mounted in the volumes section.
+        # This first imports the config and then start the development server using it
+         
+        /opt/keycloak/bin/kc.sh import --dir /opt/keycloak/data/import
+        /opt/keycloak/bin/kc.sh start-dev
+
+        # NB running start-dev with the import flag does not import existing realms only new ones
+        # using the kc.sh startup script is necessary to overwrite an existing realm config from a file
+    environment:
+      # Admin credentials
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+
+      # Development mode settings
+      KC_HTTP_PORT: 8080
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+
+      # Logging
+      KC_LOG_LEVEL: INFO
+
+      # Secrets
+      # In the version of the keycloak realm config that is committed to the
+      # git repository I have manually substituted the client secret that is
+      # exported in the export steps provided above so that this can be set in
+      # a single location the project .env` file.
+      # I have not parameterised the test use credentials.
+      CLIENT_SECRET: ${APP_OAUTH_ENDPOINTS__testing__client_secret}
+      # Replace the secret in the exported config with the CLIENT_SECRET variable
+      # https://www.keycloak.org/server/importExport#_using_environment_variables_within_the_realm_configuration_files
+    volumes:
+      - ./data/keycloak/app-dev-realm.json:/opt/keycloak/data/import/app-dev-realm.json:ro
+
+      # You can manually persist the database to a particular location
+      # Persist the database whilst performing the initial manual configuration and export steps:
+
+      # - ./data/keycloak/db:/opt/keycloak/data/h2
+      
+      # It does not need to be persisted on subsequent starts where the config is imported but
+      # would be if you need to update and re-export the config
+      
+      # Persist the import/export directory for performing the export:
+      # - ./data/keycloak/:/opt/keycloak/data/import/
+    ports:
+      - "8081:8080"
+
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+# Example error from trying to do an export when the db is not persisted:
+
+# app-keycloak-dev  | 2026-10-26T12:19:18.889246000Z + /opt/keycloak/bin/kc.sh export --realm app-dev --dir /opt/keycloak/data/import --users realm_file --verbose
+# app-keycloak-dev  | 2026-10-26T12:19:22.159610000Z 2026-10-26 12:19:22,158 INFO  [org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory] (main) Starting Infinispan embedded cache manager
+# app-keycloak-dev  | 2026-10-26T12:19:22.295546000Z 2026-10-26 12:19:22,295 INFO  [org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory] (main) Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for sessions to 10000 entries.
+# app-keycloak-dev  | 2026-10-26T12:19:22.295698000Z 2026-10-26 12:19:22,295 INFO  [org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory] (main) Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for clientSessions to 10000 entries.
+# app-keycloak-dev  | 2026-10-26T12:19:22.295730000Z 2026-10-26 12:19:22,295 INFO  [org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory] (main) Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for offlineSessions to 10000 entries.
+# app-keycloak-dev  | 2026-10-26T12:19:22.295764000Z 2026-10-26 12:19:22,295 INFO  [org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory] (main) Persistent user sessions enabled and no memory limit found in configuration. Setting max entries for offlineClientSessions to 10000 entries.
+# app-keycloak-dev  | 2026-10-26T12:19:22.547072000Z 2026-10-26 12:19:22,546 INFO  [org.infinispan.CONTAINER] (ForkJoinPool.commonPool-worker-1) ISPN000556: Starting user marshaller 'org.infinispan.commons.marshall.ImmutableProtoStreamMarshaller'
+# app-keycloak-dev  | 2026-10-26T12:19:23.234693000Z 2026-10-26 12:19:23,234 INFO  [org.keycloak.broker.provider.AbstractIdentityProviderMapper] (main) Registering class org.keycloak.broker.provider.mappersync.ConfigSyncEventListener
+# app-keycloak-dev  | 2026-10-26T12:19:23.721898000Z 2026-10-26 12:19:23,721 INFO  [org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory] (main) Node name: node_384626, Site name: null
+# app-keycloak-dev  | 2026-10-26T12:19:24.231123000Z 2026-10-26 12:19:24,230 WARN  [io.agroal.pool] (main) Datasource '<default>': JDBC resources leaked: 1 ResultSet(s) and 0 Statement(s)
+# app-keycloak-dev  | 2026-10-26T12:19:24.233067000Z 2026-10-26 12:19:24,232 INFO  [org.keycloak.services] (main) KC-SERVICES0034: Export of realm 'app-dev' requested.
+# app-keycloak-dev  | 2026-10-26T12:19:24.272457000Z 2026-10-26 12:19:24,272 INFO  [com.arjuna.ats.jbossatx] (main) ARJUNA032014: Stopping transaction recovery manager
+# app-keycloak-dev  | 2026-10-26T12:19:24.341832000Z 2026-10-26 12:19:24,341 ERROR [org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler] (main) ERROR: Failed to start server in (nonserver) mode
+# app-keycloak-dev  | 2026-10-26T12:19:24.342643000Z 2026-10-26 12:19:24,341 ERROR [org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler] (main) Error details:: java.lang.NullPointerException: Cannot invoke "org.keycloak.models.RealmModel.getId()" because "realm" is null

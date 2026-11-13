@@ -1,0 +1,50 @@
+[project]
+name = "sample-tracker"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Richard J. Acton", email = "richardjacton@richardjacton.net" }
+]
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "authlib>=1.9.1",
+    "flask>=3.1.3",
+    "justhtml>=3.16.0",
+    "markdown>=3.10.3",
+    "odmantic>=1.1.0",
+    "opinionated-mixins>=0.2.0",
+    "pydantic[email]>=2.14.1",
+    "pyyaml>=6.0.3",
+    "requests>=2.34.2",
+    "wonderwords>=3.0.1",
+]
+
+[project.scripts]
+sample-tracker = "sample_tracker:main"
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "myst-parser>=4.0.1",
+    "ptpython>=3.0.32",
+    "pytest>=9.1.1",
+    "pytest-sphinx>=0.7.1",
+    "sphinx>=8.1.3",
+    "sphinx-book-theme>=1.1.4",
+]
+
+[tools.pytest.ini_options]
+pythonpath = ["src", "tests"]
+addopts = [
+    "--doctest-modules",
+    "--ignore data",
+]
+
+[tool.jinja-lsp]
+templates = "./templates"
+backend = ["./src"]
+

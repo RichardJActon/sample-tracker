@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block buttons %}
+<a href="{{ url_for('index.index')}}" class="btn btn-primary" role="button">Home</a>
+<a href="{{ url_for('pages.account')}}" class="btn btn-info" role="button">Account</a>
+<a href="{{ url_for('login.logout') }}" class="btn btn-danger" role="button">Log Out</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="row text-center">
+	<div>
+		<img src="{{ url_for('static', filename='images/hex-sample-tracker.png') }}" width="40px">
+	</div>
+</div>
+
+<div class="row">
+	<h2>{{person.given_name}} {{person.family_name}}</h2>
+</div>
+
+<div class="row">
+	<table class="table">
+		<thead class="thead-dark">
+			<tr>
+				<th scope="col">Username</th>
+				<th scope="col">id</th>
+				<th scope="col">Email</th>
+				<th scope="col">Email Confirmed</th>
+				<!-- <th scope="col">Permissions</th> -->
+				<th scope="col">Roles</th>
+				<th scope="col">N Projects</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% if person %}
+			<tr>
+				<td>{{ person.username }}</td>
+				<td>{{ person.id }}</td>
+				<td>{{ person.email }}</td>
+				<td>{{ person.email_verified }}</td>
+				<td>
+					{% for role in person.roles %}
+					<span class="badge text-bg-{{- role.get_colour_class() -}}">
+						{{ role.value }}
+					</span>
+					{% endfor %}
+				</td>
+				<td>{{ n_projects }}</td>
+			</tr>
+			{% else %}
+			<tr><td colspan=5 class="text-center">Missing User Info</td></tr>
+			{% endif %}
+		</tbody>
+	</table>
+</div>
+
+{% endblock %}

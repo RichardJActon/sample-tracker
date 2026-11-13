@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<!-- Required meta tags -->
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<!-- Bootstrap CSS (flatly from bootswatch)-->
+		<link href="{{ url_for('static', filename='node_modules/bootstrap/dist/css/bootstrap.min.css') }}" rel="stylesheet">
+
+		<!-- CSS -->
+		<link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+		{% block css %} {% endblock %}
+
+		<title>{% block title %}Sample Tracking{% endblock %}</title>
+	</head>
+	<body>
+		<div id="maincontent" class="container">
+			<div class="row">
+				<div class="col-md-2">
+					<div class="d-grid gap-2  pb-2">
+						<img src="{{ url_for('static', filename='images/hex-sample-tracker.png') }}" width=80% style="margin-left: auto; margin-right: auto;" alt="Sample Tracking Logo">
+					</div>
+					<div class="d-grid gap-2">
+						{% block buttons %} {% endblock %}
+					</div>
+				</div>
+				<div class="col-md-10">
+					<div class="row text-center">
+						<h2>Sample Tracking System</h2>
+					</div>
+					{% block content %}{% endblock %}
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-12">
+					<div class="row text-center">
+						<p></p>
+						<p></p>
+						<p></p>
+					</div>
+				</div>
+			</div>
+			<div id="footer" class="row fixed-bottom">
+				<div class="col-md-12">
+					<img src="{{ url_for('static', filename='images/bioinformatics_logo.svg') }}" width="100px" alt="Babraham Bioinformatics Logo">
+					<!-- paramaterise the issue tracker url? -->
+					<a href="https://github.com/RichardJActon/sample-tracker">Sample Tracker</a>
+					- Please report any problems to our <a href="https://github.com/RichardJActon/sample-tracker/issues">issue tracker</a>
+				</div>
+			</div>
+		</div>
+
+		<!-- Bootstrap JS -->
+		<script src="{{ url_for('static', filename='node_modules/bootstrap/dist/js/bootstrap.min.js') }}"></script>
+
+		<!-- JQuery which we're still using even if bootstrap doesn't need it any more -->
+		<!-- <script src="{{ url_for('static', filename='node_modules/jquery/dist/jquery.min.js') }}"></script> -->
+
+		<!-- JSCookie -->
+		<!-- <script src="{{ url_for('static', filename='node_modules/js-cookie/dist/js.cookie.min.js') }}"></script> -->
+
+		<!-- Custom JS -->
+		<!-- <script src="{{ url_for('static', filename='js/main.js') }}"></script> -->
+		{% block js %}{% endblock %}
+	</body>
+</html>

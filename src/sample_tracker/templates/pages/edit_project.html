@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block buttons %}
+<a href="{{ url_for('index.index')}}" class="btn btn-primary" role="button">
+	Home
+</a>
+{% endblock %}
+{% block content %}
+<div class="row text-center">
+	{% if project.id %}
+	<h3>Edit Project <span id="project_id">{{ project.id }}</span></h3>
+	{% else %}
+	<h3>New Project</h3>
+	{% endif %}
+</div>
+
+<form id="edit-project" method="POST">
+	<div class="row">
+		<div class="col-md-3">
+			<div class="form-group">
+				<label for="project_owner">Owner</label>
+				<input type="text"
+				       class="form-control"
+				       id="project_owner"
+				       placeholder="Enter Username"
+				       value="{{project_owner}}"
+				       form="edit-project"
+				>
+			</div>
+		</div>
+		<div class="col-md-2">
+			<button id="checkowner" type="button" class="btn btn-primary mt-4">
+				Check user
+			</button>
+		</div>
+		<div class="col-md-4">
+			<p id="checkedname" class="mt-4"></p>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="form-group">
+			<label for="project_title">Title</label>
+			<input type="text"
+			       class="form-control"
+			       id="project_title"
+			       placeholder="Short title name"
+			       value="{{ project.title }}"
+			       form="edit-project"
+			>
+		</div>
+
+		<div class="form-group">
+			<label for="project_description">Description</label>
+			<textarea class="form-control" id="project_description" rows="5" form="edit-project">{{- project.description -}}</textarea>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-3">
+			<div class="form-group">
+				<label for="project_tags"><h4>Tags</h4></label>
+				<input type="text" class="form-control" id="new_tag" form="edit-project">
+				<!-- pattern="[A-Za-z0-9\-_]{1,128}" title="Letters, numbers, & -/_ only, no longer that 128 characters" -->
+				<button id="addtag" type="button" class="btn btn-primary btn-sm">
+					Add New
+				</button>
+			</div>
+		</div>
+		<div class="col-md-9">
+			<div class="mt-4" id="added_tags">
+				{% for tag, v in project.tags.items() -%}
+				<button type="button" class="btn btn-sm btn-secondary">
+					<span class="tag_value">{{- tag -}}</span>
+					<span class="tagclose">&nbsp;&times;</span>
+				</button>
+				{% endfor %}
+			</div>
+		</div>
+	</div>
+	<br>
+	<div class="row mt-5">
+		<button id="saveproject"
+		        type="button"
+		        class="btn btn-primary"
+		        style="width:25%;margin-left: auto;margin-right: auto;"
+		>
+			Save Project
+		</button>
+		<br>
+		{% if new %}
+		<a id="cancel"
+		   style="button; width:25%;margin-left: auto;margin-right: auto;"
+		   class="btn btn-danger"
+		   href="{{url_for('index.index')}}"
+		>
+			Cancel
+		</a>
+		{% else %}
+		<a id="cancel"
+		   style="button; width:25%;margin-left: auto;margin-right: auto;"
+		   class="btn btn-danger"
+		   href="{{url_for('project.project', project_id = project.id)}}"
+		>
+			Cancel
+		</a>
+		{% endif %}
+	</div>
+	<br>
+</form>
+<form id="project-auth" method="POST">
+	<div class="row">
+		<div class="col-md-3">
+			<div class="form-group">
+				<label for="user-add"><h4>Edit Users</h4></label>
+				<select id="user-add" name="user-add" class="form-select" form="project-auth">
+					<option value="" disabled selected>Select a user...</option>
+					{% for username in users.values() %}
+					<option value="{{username}}">{{username}}</option>
+					{% endfor %}
+				</select>
+				<br>
+				<input class="form-check-input" type="checkbox" id="set-view" name="set-view" form="project-auth">
+				<label class="form-check-label" for="set-view">view</label>
+
+				<input class="form-check-input" type="checkbox" id="set-edit" name="set-edit" form="project-auth">
+				<label class="form-check-label" for="set-edit">edit</label>
+				<br>
+				<button id="add-user" type="button" class="btn btn-primary btn-sm">
+					Add User
+				</button>
+			</div>
+		</div>
+	</div>
+</form>
+<br>
+<div class="row">
+	<div id="user-cards">
+		<h5>Users</h5>
+		{% for userid, auths in project.authorizations.items() %}
+		<div class="card" style="width: 18rem">
+			<div class="card-body">
+				<p class="card-text">
+					<span>
+						<strong id="username-{{users[userid]}}">{{users[userid]}}</strong>
+					</span>
+					{% for auth in auths.keys() | sort %}
+					<span id="{{auth}}"
+					      class="badge text-bg-{{- authorizations[auth].get_colour_class() }} auth"
+					>
+						{{- auth -}}
+					</span>
+					{% endfor %}
+				</p>
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+</div>
+<br>
+
+<!-- Modal -->
+<div class="modal fade"
+     id="editprojecterror"
+     tabindex="-1"
+     role="dialog"
+     aria-labelledby="errorTitle"
+     aria-hidden="true"
+>
+	<div class="modal-dialog modal-dialog-centered" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="errorTitle">Error</h5>
+			</div>
+			<div class="modal-body" id="errormessage">
+				Something went wrong
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+					Try Again
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade"
+     id="invalidTagError"
+     tabindex="-1"
+     role="dialog"
+     aria-labelledby="errorTitle"
+     aria-hidden="true"
+>
+	<div class="modal-dialog modal-dialog-centered" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="tagErrorTitle">Error</h5>
+			</div>
+			<div class="modal-body" id="tagErrorMessage">
+				Something went wrong
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+					Try Again
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block js %}
+<link rel="stylesheet" href="{{ url_for('static', filename='node_modules/easymde/dist/easymde.min.css') }}">
+<script src="{{ url_for('static', filename='node_modules/easymde/dist/easymde.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/edit_project.js') }}"></script>
+{% endblock %}
