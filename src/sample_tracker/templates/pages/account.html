@@ -38,7 +38,13 @@
 				<td>{{ person.id }}</td>
 				<td>{{ person.email }}</td>
 				<td>{{ person.email_verified }}</td>
-				<td>{{ person.get_roles_csl() }}</td>
+				<td>
+					{% for role in person.roles %}
+					<span class="badge text-bg-{{- role.get_colour_class() -}}">
+						{{ role.value }}
+					</span>
+					{% endfor %}
+				</td>
 				<td>{{ n_projects }}</td>
 			</tr>
 			{% else %}
