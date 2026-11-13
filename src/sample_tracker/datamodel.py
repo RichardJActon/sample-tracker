@@ -9,7 +9,8 @@ from pydantic import (
     model_validator,
 )
 from typing import (
-    Any, Optional,
+    Any,
+    Optional,
 )
 import hashlib
 from pathlib import Path
