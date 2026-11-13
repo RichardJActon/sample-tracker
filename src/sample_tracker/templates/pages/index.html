@@ -1,19 +1,49 @@
 {% extends "base.html" %}
 
 {% block buttons %}
-<a href="{{ url_for('index.index') }}" class="btn btn-primary" role="button">Home</a>
-<a href="{{ url_for('pages.account') }}" class="btn btn-primary" role="button">Account</a>
-{% if can_create_projects %}
-<a href="{{ url_for('project.editproject') }}" class="btn btn-primary" role="button">New Project</a>
+<a href="{{ url_for('index.index') }}"
+   class="btn btn-primary"
+   role="button"
+>
+	Home
+</a>
+<a href="{{ url_for('pages.account') }}"
+   class="btn btn-info"
+   role="button"
+>
+	Account
+</a>
+{% if person.can_create_project() %}
+<a href="{{ url_for('project.editproject') }}"
+   class="btn btn-success"
+   role="button"
+>
+	New Project
+</a>
 {% endif %}
-<a href="{{ url_for('login.logout') }}" class="btn btn-danger" role="button">Log Out</a>
+{% if person.is_approver() %}
+<a href="{{ url_for('approval.approvals') }}"
+   class="btn btn-warning"
+   role="button"
+>
+	Approvals
+</a>
+{% endif %}
+<a href="{{ url_for('login.logout') }}"
+   class="btn btn-danger"
+   role="button"
+>
+	Log Out
+</a>
 {% endblock %}
 
 {% block content %}
 
 <div class="row text-center">
 	<div>
-		<img src="{{ url_for('static', filename='images/hex-sample-tracker.png') }}" width="40px">
+		<img src="{{ url_for('static', filename='images/hex-sample-tracker.png') }}"
+		     width="40px"
+		>
 	</div>
 </div>
 
@@ -39,7 +69,9 @@
 				<th scope="col">Date</th>
 				<th scope="col">Status</th>
 				<th scope="col">Open</th>
+				{% if person.is_admin() %}
 				<th scope="col">Delete</th>
+				{% endif %}
 			</tr>
 		</thead>
 		<tbody>
@@ -50,39 +82,25 @@
 			{% for project in projects %}
 			<tr>
 				<td>{{ project.id }}</td>
-				<td>{{ project.title }}</td>
+				<td class="title">{{ project.title }}</td>
 				<td>{{ project.date_created.strftime('%Y-%m-%d %H:%M') }}</td>
-				<td>{{ project.status.value }}</td>
+				<td>
+					<span class="badge text-bg-{{- project.status.get_colour_class() -}}">
+						{{ project.status.value }}
+					</span>
+				</td>
 				<td><a href="/project/{{ project.id }}" role="button" class="btn btn-success">Open</a></td>
+				{% if person.is_admin() %}
 				<td><button id="delete-{{project.id}}" class="delete-project-button btn btn-danger">Delete</button></td>
+				{% endif %}
 			</tr>
 			{% endfor %}
 		</tbody>
 	</table>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="confirmDelete" tabindex="-1" role="dialog" aria-labelledby="confirmDelete" aria-hidden="true">
-	<div class="modal-dialog modal-dialog-centered" role="document">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="confirmDeleteTitle">Are you sure?</h5>
-			</div>
-			<div class="modal-body" id="confirmDeleteMessage">
-				Do you want to permenantly delete the project?
-			</div>
-			<div id="projectID"></div>
-			<div id="projectTitle"></div>
-			<div class="modal-footer">
-				<button id="cancelDeleteButton" class="btn btn-primary" data-bs-dismiss="modal">Cancel</button>
-				<span></span>
-				<a id="confirmDeleteButton" href="project/project delete/id" class="button btn btn-danger">
-					Delete
-				</a>
-			</div>
-		</div>
-	</div>
-</div>
+{% include 'confirm-delete-modal.html'%}
+
 {% endblock %}
 
 {% block js %}
