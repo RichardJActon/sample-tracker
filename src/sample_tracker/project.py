@@ -37,7 +37,6 @@ def construct_bp(engine):
     @bp.route("/project/<project_id>")
     @requires_auth
     def project(project_id):
-
         try:
             person = get_current_person(engine, session)
         except Exception as e:
@@ -45,23 +44,29 @@ def construct_bp(engine):
 
         # Get the project
         try:
-            project = engine.find_one(Project, Project.id == ObjectId(project_id))
+            project = engine.find_one(
+                Project, Project.id == ObjectId(project_id)
+            )
         except Exception as e:
             current_app.logger.exception("No project found" + str(e))
         
         # Check they are allowed to see this
-        if not can_person_see_project(person, project):
-            current_app.logger.exception((
-                f"{person.username} tried to view "
-                f"{str(project.id)} which they are not authorized to view"
-            ))
+        try:
+            if not can_person_see_project(person, project):
+                m = (
+                    f"{person.username} tried to view "
+                    f"{str(project.id)} which they are not authorized to view"
+                )
+                current_app.logger.exception(m)
+                raise PermissionError(m)
+        except Exception as e:
             return Response(
-                "Not allowed to view this project",
+                str(e),
+                # "Not allowed to view this project",
                 status="403", mimetype="text/plain"
             )
-            # raise Exception("Not allowed to view this project")
 
-        # We want to swap the owner on the project for the owner name
+        # We want to swap the owner on the project for the owner name ??
         owner = engine.find_one(Person, Person.id == project.owner)
         # project.owner = owner.id
         project_owner = owner.username
@@ -69,16 +74,56 @@ def construct_bp(engine):
         # p
         attachments = []
         if project.attachments != []:
-            attachments = list(engine.find(File, query.in_(File.id, project.attachments)))
+            try:
+                attachments = list(engine.find(
+                    File, query.in_(File.id, project.attachments))
+                )
+            except Exception as e:
+                current_app.logger.exception(e)
+
+        # can remove restrictions if:
+        # - admin
+        # - editor and not yet submitted
+        # - is approver for the restriction
+        
+        # Show only restrictions not already applied to the project in the
+        # add restrictions dialog
+        current_restrictions = project.restrictions_values_set()
+        all_restrictions = Restriction.values()
+        restrictions = list(current_restrictions ^ all_restrictions)
+
+        # Is approver for any restrictions
+        # shows remove restrictions buttons, additional logic
+        # checks what they can approve and only shows remove buttons for
+        # relevant restrictions
+        # is_approver = any(x in person.get_roles() for x in all_restrictions)
+        any_unsubmitted = any(
+            x == "Not Submitted" for x in [
+                v.get('status') for k,v in project.restriction_details.items()
+            ]
+        )
+
+        users = {
+            str(u.id): u.username for u in list(engine.find(
+                Person, Person.id.in_(
+                    [ObjectId(x) for x in project.authorizations.keys()]
+                )
+            ))
+        }
 
         return render_template(
             "pages/project.html",
             person = person, project = project,
             can_edit = can_person_edit_project(person, project),
             can_view = can_person_see_project(person, project),
-            project_description = project.get_description_html(),
+            can_create = can_person_create_project(person),
             attachments = attachments,
-            project_owner = project_owner
+            project_owner = project_owner,
+            restrictions = restrictions,
+            any_unsubmitted = any_unsubmitted,
+            users = users,
+            restriction = Restriction,
+            approval_status = ApprovalStatus,
         )
 
     @bp.route("/editproject",defaults={"project_id":None})
@@ -99,7 +144,7 @@ def construct_bp(engine):
         # if project_id is None and not person.is_admin:
         #     raise Exception("Admins only")
 
-        if project_id is None and can_person_create_project(person):
+        if project_id is None and person.can_create_project():
             project = Project(
                 owner = person.id,
                 title = "",
@@ -119,9 +164,12 @@ def construct_bp(engine):
                 current_app.logger.info(f"{person.username} attempted to edit {project.id}")
                 return Response("You don't have permission to edit this project", status="403")
 
+        users = {str(u.id): u.username for u in list(engine.find(Person))}
+
         return render_template(
             "pages/edit_project.html",
-            new = new, project = project, person = person
+            new = new, project = project, person = person, users = users,
+            authorizations = Authorizations
         )
 
     @bp.route("/saveproject", methods = ['POST', 'GET'])
