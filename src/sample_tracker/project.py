@@ -184,6 +184,31 @@ def construct_bp(engine):
             authorizations = Authorizations
         )
 
+    @bp.route("/project/update_user_auth", methods = ['POST', 'GET'])
+    @requires_auth
+    def update_user_auth():
+        person = get_current_person(engine, session)
+        form = get_form()
+        print(form)
+        project = engine.find_one(Project, Project.id == ObjectId(form["project_id"]))
+        # print(project)
+        if can_person_edit_project(person, project):
+            uid = str(engine.find_one(Person, Person.username == form["user-add"]).id)
+            if form.get("remove") == 'true':
+                del project.authorizations[uid]
+                engine.save(project)
+                return "OK"
+            new_auth = {uid: {}}
+            if form.get("set-view", False):
+                new_auth[uid].update({'view':0})
+            if form.get("set-edit", False):
+                new_auth[uid].update({'edit':0})
+            project.authorizations.update(new_auth)
+            engine.save(project)
+            return "OK"
+        else:
+            return Response("not authorised to update project", status=403)
+
     @bp.route("/saveproject", methods = ['POST', 'GET'])
     @requires_auth
     def saveproject():
@@ -215,12 +240,12 @@ def construct_bp(engine):
                 # date_created,
                 tags = tags,
                 # samples = [],
-                authorizations = dict({
-                    str(owner.id): dict({"edit":0, "view":0}),
-                    # The person who create the project should also be able
+                authorizations = {
+                    str(owner.id): {"edit":0, "view":0},
+                    # The person who created the project should also be able
                     # to see / edit it even if they are not the owner
-                    str(person.id): dict({"edit":0, "view":0})
-                })
+                    str(person.id): {"edit":0, "view":0}
+                }
             )
                 
             engine.save(project)
@@ -241,8 +266,13 @@ def construct_bp(engine):
             # They may want to change the owner
             if form["owner"] and can_change_project_ownership(person, project):
                 owner = engine.find_one(Person, Person.username == form["owner"])
-                if project.id != owner.id:
+                if project.owner != owner.id:
                     project.owner = owner.id
+                    # ensure the owner also has permissions set explicitly
+                    project.authorizations = deep_update(
+                        project.authorizations,
+                        {str(owner.id): {"edit":0, "view":0}}
+                    )
                     engine.save(project)
 
             return str(project.id)
