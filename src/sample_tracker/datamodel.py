@@ -171,6 +171,29 @@ class Person(Model):
     def get_roles_csl(self):
         return ", ".join(self.roles.keys())
 
+    def is_admin(self):
+        if Role.admin in self.roles.keys():
+            return True
+        else:
+            return False
+
+    def can_create_project(self):
+        if Role.create in self.roles.keys():
+            return True
+        elif Role.admin in self.roles.keys():
+            return True
+        else:
+            return False
+
+    def is_approver(self):
+        if self.get_roles() & Restriction.values() != set():
+            return True
+        elif Role.admin in self.roles.keys():
+            return True
+        else:
+            return False
+            
+
 class Team(Model):
     members: set[ObjectId] # ObjectId str & usernames?
 
