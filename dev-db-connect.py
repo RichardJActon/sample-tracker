@@ -1,5 +1,6 @@
 # invoke from src/sample_tracker with:
 # exec(open("../../dev-db-connect.py").read())
+# exec(open("dev-db-connect.py").read())
 
 # for easy module reloading while working
 from importlib import reload
@@ -13,7 +14,8 @@ from typing import Any
 import os
 from odmantic import SyncEngine
 
-with open("../../config.yaml","r") as f:
+# with open("../../config.yaml","r") as f:
+with open("config.yaml","r") as f:
     conf = yaml.safe_load(f)
 
 conf["MONGO"]["PWD"] = os.environ["APP_MONGO__PWD"]
