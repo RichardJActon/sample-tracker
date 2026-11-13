@@ -39,12 +39,31 @@ class ProjectStatus(EnumExtra, str, Enum):
     active = "Active"
     completed = "Completed"
 
+    def get_colour_class(self):
+        colour_class_map = {
+            # "Proposed": "warning-emphasis",
+            "Proposed": "warning",
+            "Active": "success",
+            "Completed": "secondary",
+        }
+        return colour_class_map.get(self.value)
+
 class ApprovalStatus(EnumExtra, str, Enum):
     notsubmitted = "Not Submitted"
     approved = "Approved"
     revise = "Requires Revisions"
     pending = "Pending"
     denied = "Denied"
+
+    def get_colour_class(self):
+        colour_class_map = {
+            "Not Submitted": "secondary",
+            "Approved": "success",
+            "Requires Revisions": "warning",
+            "Pending": "info",
+            "Denied": "danger",
+        }
+        return colour_class_map.get(self.value)
 
 # class Roles(str, Enum):
 class Authorizations(EnumExtra, str, Enum):
@@ -53,7 +72,14 @@ class Authorizations(EnumExtra, str, Enum):
     edit = "Edit"
     admin = "Admin"
 
-class Project(Model):
+    def get_colour_class(self):
+        colour_class_map = {
+            "Move": "primary",
+            "View": "info",
+            "Edit": "warning",
+            "Admin": "danger",
+        }
+        return colour_class_map.get(self.value)
 
 class Restriction(EnumExtra, str, Enum):
     """
@@ -94,6 +120,16 @@ class Role(EnumExtra, str, Enum):
     approve_hta = "HTA"
     approve_radioactivity = "Radiation"
     approve_bsl2 = "BSL-2"
+
+    def get_colour_class(self):
+        colour_class_map = {
+            "Create": "warning",
+            "Admin": "danger",
+            "HTA": "info",
+            "Radiation": "info",
+            "BSL-2": "info",
+        }
+        return colour_class_map.get(self.value)
 
     
 class Person(Model):
