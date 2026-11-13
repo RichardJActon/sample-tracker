@@ -184,7 +184,6 @@ class Person(AppVersionInfo, Model):
     last_authenticated: datetime | None = None
     date_created: datetime = Field(default_factory = naive_utc_timestamp)
     roles: dict[Role,int] = {} # set()
-    # can_approve: set[str] | None = None # Resctiction Names
     
     def get_roles(self):
         return {k.value for k in self.roles.keys()}
@@ -233,11 +232,14 @@ class Event(Model):
     
 class Sample(Model):
     name: str
-    description: str
-    location: str
-    restrictions: set[ObjectId]
+    description: str | None = None
+    location: list[str] = []
+    restrictions: list[ObjectId] = []
+    tags: dict[str,str] = {} # use set
+
 
 class SampleGroup(Model):
+    name: str
     samples: set[ObjectId] # Sample
 
 class Building(str, Enum):
