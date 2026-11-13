@@ -293,41 +293,80 @@ def construct_bp(engine):
             return Response("Access Denied", status = 403, mimetype="text/plain")
 
     @bp.route("/project/upload_project_attachment/<project_id>", methods = ["GET", "POST"])
-    @requires_auth # needs admin/role check
+    @requires_auth
     def upload_project_attachment(project_id):
-        project_id = str(project_id)
-        if request.method == "POST":
-            if "file" not in request.files:
-                flash("No file part")
-                # {"error:" "importError"}
-                return redirect(request.url)
-            file = request.files["file"]
-            if file.filename == "":
-                flash("No selected file")
-                # {"error:" "noFileFound"}
-                return(request.url)
-            if file:
-                # consider setting the object ID first so
-                # the filepath can include the ID of the file object
-                # this would make it easier to rebuild the DB from
-                # the file system should the need arise
-                filename = secure_filename(file.filename)
-                project_dir = Path(current_app.config["UPLOAD_FOLDER"]) / "projects" / project_id
-                project_dir.mkdir(parents=True, exist_ok=True)
-                file_path = project_dir / filename
-                file.save(file_path)
-                file_object = File(path = str(file_path))
-                engine.save(file_object)
-                project = engine.find_one(Project, Project.id == ObjectId(project_id))
-                project.attachments.append(file_object.id)
-                engine.save(project)
-                # return json
-                # {"data:" {"filePath": file_path}}
-                
-                # project.update_one({
-                #     "project_id": project_id,
-                #     "attachments.attachement_id": 
-                # })
+        project_id = ObjectId(project_id)
+        person = get_current_person(engine, session)
+        project = engine.find_one(Project, Project.id == project_id)
+        if can_person_edit_project(person, project):
+            project_id = str(project_id)
+            if request.method == "POST":
+                form = request.form.to_dict()
+                if len(request.files) > 1:
+                    raise Exception("Multiple files supplied when one expected!")
+                id = list(request.files.keys())[0]
+                # print(id)
+                if id not in request.files:
+                    flash("No file part")
+                    # {"error:" "importError"}
+                    return redirect(request.url)
+                file = request.files[id]
+                print(file.filename)
+                if file.filename == "":
+                    flash("No selected file")
+                    # {"error:" "noFileFound"}
+                    return(request.url)
+                if file:
+                    # consider setting the object ID first so
+                    # the filepath can include the ID of the file object
+                    # this would make it easier to rebuild the DB from
+                    # the file system should the need arise
+                    filename = secure_filename(file.filename)
+                    project_dir = Path(current_app.config["UPLOAD_FOLDER"]) / "projects" / project_id
+
+                    # form = args_to_dict(request.form)
+                    form = request.form.to_dict()
+                    restriction = form.get("restriction", None)
+                    if restriction:
+                        project_dir = project_dir / restriction
+
+                    project_dir.mkdir(parents=True, exist_ok=True)
+                    file_path = project_dir / filename
+                    file.save(file_path)
+                    file_object = File(path = str(file_path))
+                    engine.save(file_object)
+                    project = engine.find_one(Project, Project.id == ObjectId(project_id))
+                    project.attachments.append(file_object.id)
+
+                    if restriction:
+                        project.restriction_details = deep_update(
+                            project.restriction_details,
+                            {
+                                restriction: {
+                                    "form_data": {
+                                        id.split("_")[0]: {
+                                            id.split("_")[1]: {
+                                                "objectId": str(file_object.id),
+                                                "filename": filename
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        )
+                    engine.save(project)
+                    
+                    if restriction:
+                        resp = {
+                            "file_id": str(file_object.id),
+                            "filename": filename
+                        }
+                        return resp
+        else:
+            return Response(
+                "Not allowed to edit this project",
+                status="403", mimetype="text/plain"
+            )
         return redirect(url_for("project.project", project_id = project_id))
 
     @bp.route("/project/delete_project/<project_id>")
