@@ -57,6 +57,7 @@ def can_person_see_project(person, project):
         # )
 
 def can_person_create_project(person):
+    # person only input make method?
     if Role.create in person.roles.keys():
         return True
     elif Role.admin in person.roles.keys():
@@ -71,6 +72,12 @@ def get_current_person(engine, session):
     return engine.find_one(
         Person, Person.username == session["user"]["preferred_username"]
     )
+
+def is_admin(person):
+    if Role.admin in person.roles.keys():
+        return True
+    else:
+        return False
     
 
 # Permissions ----
