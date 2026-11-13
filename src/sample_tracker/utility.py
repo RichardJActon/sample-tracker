@@ -1,9 +1,16 @@
 from flask import request
 from werkzeug.datastructures import ImmutableMultiDict
-from typing import Any
+from typing import (
+    Any,
+    TypeVar,
+)
 from datetime import (
     datetime,
     timezone,
+)
+from wonderwords import (
+    RandomWord,
+    is_profanity,
 )
 
 def args_to_dict(args: ImmutableMultiDict) -> dict[str, Any]:
@@ -146,3 +153,50 @@ def naive_utc_timestamp() -> datetime:
     """
     return datetime.now(tz=timezone.utc).replace(tzinfo=None)
 
+def project_slug_gen():
+    rw = RandomWord()
+    word_min_length = 4
+    word_max_length = 9
+
+    def rand_adj():
+        return rw.word(
+            include_categories = ["adjective"],
+            word_min_length = word_min_length,
+            word_max_length = word_max_length,
+            exclude_with_spaces = True
+        )
+
+    def rand_verb():
+        return rw.word(
+            include_categories = ["verb"],
+            word_min_length = word_min_length,
+            word_max_length = word_max_length,
+            exclude_with_spaces = True
+        )
+        
+    def rand_noun():
+        return rw.word(
+            include_categories = ["noun"],
+            word_min_length = word_min_length,
+            word_max_length = word_max_length,
+            exclude_with_spaces = True
+        )
+    
+    adjective = rand_adj()
+    while is_profanity(adjective):
+        adjective = rand_adj()
+
+    verb = rand_verb()
+    while is_profanity(verb):
+        verb = rand_verb()
+
+    noun = rand_noun()
+    while is_profanity(noun):
+        noun = rand_noun()
+            
+    project_slug = "-".join([
+        adjective, verb, noun,
+        datetime.now().strftime("%M%S")
+    ])
+
+    return project_slug

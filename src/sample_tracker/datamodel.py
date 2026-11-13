@@ -20,20 +20,42 @@ from sample_tracker.utility import (
     human_readable_filesize,
     naive_utc_timestamp,
 )
+class EnumExtra():
+    """
+    Adds simple names & values methods to a Enum class to make it easy
+    to get sets of the available entries in the Enum
+    """
+    @classmethod
+    def names(cls):
+        return {x.name for x in cls}
+        
+    @classmethod
+    def values(cls):
+        return {x.value for x in cls}
+    
 
-class ProjectStatus(str, Enum):
+class ProjectStatus(EnumExtra, str, Enum):
     proposed = "Proposed"
     active = "Active"
     completed = "Completed"
 
+class ApprovalStatus(EnumExtra, str, Enum):
+    notsubmitted = "Not Submitted"
+    approved = "Approved"
+    revise = "Requires Revisions"
+    pending = "Pending"
+    denied = "Denied"
+
 # class Roles(str, Enum):
-class Authorizations(str, Enum):
+class Authorizations(EnumExtra, str, Enum):
     move = "Move"
     view = "View"
     edit = "Edit"
     admin = "Admin"
 
 class Project(Model):
+
+class Restriction(EnumExtra, str, Enum):
     """
     Args:
         title (str):
@@ -65,6 +87,13 @@ class Project(Model):
         project_description_raw = markdown(self.description)
         return JustHTML(project_description_raw, fragment = True).to_html(pretty=False)
 
+
+class Role(EnumExtra, str, Enum):
+    create = "Create"
+    admin = "Admin"
+    approve_hta = "HTA"
+    approve_radioactivity = "Radiation"
+    approve_bsl2 = "BSL-2"
 
     
 class Person(Model):
@@ -100,7 +129,7 @@ class Person(Model):
 class Team(Model):
     members: set[ObjectId] # ObjectId str & usernames?
 
-class EventTypes(str, Enum):
+class EventTypes(EnumExtra, str, Enum):
     arrived = "Arrived"
     moved = "Moved"
     destroyed = "Destroyed"
@@ -112,11 +141,6 @@ class Event(Model):
     time: datetime = Field(default_factory = naive_utc_timestamp)
     type: EventTypes
     process: str
-    
-class Restriction(Model):
-    name: str
-    description: str
-    requirements: dict[str,Any] = Field(default = dict())
     
 class Sample(Model):
     name: str
@@ -143,11 +167,6 @@ class Location(Model):
 #     person: ObjectId  # Person
 #     project: ObjectId # Project
 #     roles: set[Roles]
-class ApprovalStatus(str, Enum):
-    approved = "Approved"
-    pending = "Pending"
-    denied = "Denied"
-    
 
 class File(Model):
     path: str # Path
@@ -199,4 +218,3 @@ class File(Model):
             if instance["size"] != comp_size:
                 raise Exception(f"Provided file size of {instance.size} is not equal to size of file at the provided path {comp_size}")
         return instance
-
