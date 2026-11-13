@@ -83,6 +83,10 @@ class Authorizations(EnumExtra, str, Enum):
         return colour_class_map.get(self.value)
 
 class Restriction(EnumExtra, str, Enum):
+    HTA = "HTA" # "Human Tissue Act Relevant"
+    BSL2 = "BSL-2" # "Biosafety Level 2"
+    Radiation = "Radiation" # "Radiological Protection"
+
     """
     Args:
         title (str):
@@ -98,7 +102,7 @@ class Restriction(EnumExtra, str, Enum):
     description: str = "" # None
     date_created: datetime = Field(default_factory = naive_utc_timestamp)
     status: ProjectStatus = Field(default = ProjectStatus.proposed)
-    restrictions: list[ObjectId] | None = None # Restriction
+    restrictions: list[Restriction] = [] # list[ObjectId] | None = None # Restriction
     restriction_details: dict = {}
     samples: list[ObjectId] = [] #| None = None
     attachments: list[ObjectId] = [] # File
@@ -112,7 +116,11 @@ class Restriction(EnumExtra, str, Enum):
 
     def get_description_html(self):
         project_description_raw = markdown(self.description)
-        return JustHTML(project_description_raw, fragment = True).to_html(pretty=False)
+        return JustHTML(project_description_raw, fragment = True).to_html(pretty=False) 
+
+    def restrictions_values_set(self):
+        return {m.value for m in self.restrictions}
+
 
 
 class Role(EnumExtra, str, Enum):
