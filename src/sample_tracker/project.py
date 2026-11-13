@@ -352,8 +352,8 @@ def construct_bp(engine):
                 attachment = engine.find_one(File, File.id == attachment_id)
                 dir = Path(attachment.path).parent.resolve()
                 filename = attachment.get_filename()
-                print(dir)
-                print(filename)
+                # print(dir)
+                # print(filename)
                 rel_filepath = "/".join(Path(attachment.path).parts[-3:])
                 current_app.logger.info(
                     f"{person.username} downloaded {rel_filepath}"
