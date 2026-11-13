@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block buttons %}
+<a href="{{ url_for('index.index') }}"
+   class="btn btn-primary"
+   role="button"
+>
+	Home
+</a>
+<a href="{{ url_for('pages.account') }}"
+   class="btn btn-info"
+   role="button"
+>
+	Account
+</a>
+<a href="{{ url_for('login.logout') }}"
+   class="btn btn-danger"
+   role="button"
+>
+	Log Out
+</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="row text-center">
+	<div>
+		<img src="{{ url_for('static', filename='images/hex-sample-tracker.png') }}"
+		     width="40px"
+		>
+	</div>
+</div>
+
+<div class="row">
+	<p>
+		Projects for which you have the authority to approve the restrictions that are applied to them
+	</p>
+</div>
+<div class="row">
+	<h2>Project Approvals</h2>
+</div>
+
+<div class="row">
+	<div class="accordion" id="restriction-type-accordion">
+		{% for restriction, projects in relevant_projects.items() %}
+		<div class="accordion-item">
+			<h2 class="accordion-header">
+				<button class="accordion-button"
+				        type="button"
+				        data-bs-toggle="collapse"
+				        data-bs-target="#panelsStayOpen-{{restriction}}"
+				        aria-expanded="true"
+				        aria-controls="panelsStayOpen-{{restriction}}"
+				>
+					{{restriction}}
+				</button>
+			</h2>
+			<div id="panelsStayOpen-{{restriction}}"
+			     class="accordion-collapse collapse show"
+			>
+				<div class="accordion-body">
+				</div>
+				<div class="table-responsive">
+					<table class="table" style="width:100%; overflow:auto;">
+						<thead class="thead-dark">
+							<tr>
+								<th scope="col">ID</th>
+								<th scope="col">Title</th>
+								<th scope="col">Date</th>
+								<th scope="col">Project Status</th>
+								<th scope="col">Restriction Status</th>
+								<th scope="col">Open</th>
+								{% if person.is_admin() %}
+								<th scope="col">Delete</th>
+								{% endif %}
+							</tr>
+						</thead>
+						<tbody>
+							{% if projects %}
+							{% else %}
+							<tr>
+								<td colspan=5 class="text-center">
+									No relevant projects
+								</td>
+							</tr>
+							{% endif %}
+							{% for project in projects %}
+							<tr>
+								<td>{{ project.id }}</td>
+								<td class="title">{{ project.title }}</td>
+								<td>{{ project.date_created.strftime('%Y-%m-%d %H:%M') }}</td>
+								<td>
+									<span class="badge text-bg-{{- project.status.get_colour_class() -}}">
+										{{ project.status.value }}
+									</span>
+								</td>
+								<td>
+									{% set status = project.restriction_details[restriction].get("status") %}
+									<span class="badge text-bg-{{- approval_status(status).get_colour_class() -}}">
+										{{ status }}
+									</span>
+								</td>
+								<td>
+									<a href="/project/{{ project.id }}"
+									   role="button"
+									   class="btn btn-success"
+									>
+										Open
+									</a>
+								</td>
+								{% if person.is_admin() %}
+								<td>
+									<button id="delete-{{project.id}}"
+									        class="delete-project-button btn btn-danger"
+									>
+										Delete
+									</button>
+								</td>
+								{% endif %}
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+	</div>
+</div>
+
+{% endblock %}
+
+{% block js %}
+<!-- <script src="{{ url_for('static', filename='js/index.js') }}"></script> -->
+{% endblock %}
