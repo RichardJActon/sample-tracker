@@ -35,8 +35,8 @@ jobs:
       - name: Run tests
         # For example, using `pytest`
         run: |
-          APP_CONFIG_PATH=/home/runner/work/pims/configuration/conf.json
-          uv run pytest --ignore=data --ignore=dev-db.connect.py --doctest-modules
+          APP_CONFIG_PATH=/home/runner/work/sample-tracker/conf.json
+          uv run pytest --ignore=data --ignore=dev-db-connect.py --doctest-modules
         
   document:
     name: document
