@@ -16,9 +16,12 @@ from functools import (
 from sample_tracker.datamodel import (
     Person,
     Role,
+    Project,
 )
+from odmantic.engine import SyncEngine
+from werkzeug.local import LocalProxy
 
-def can_change_project_ownership(person, project):
+def can_change_project_ownership(person: Person, project: Project) -> bool:
     # may also want current project owners to
     # be able to change project ownership
     # even if they are not admins?
@@ -30,7 +33,7 @@ def can_change_project_ownership(person, project):
         return False
         # raise Exception("cannot change project ownership")
 
-def can_person_edit_project(person, project):
+def can_person_edit_project(person: Person, project: Project) -> bool:
     if "edit" in (project.authorizations.get(str(person.id))or []):
         return True
     elif project.owner == person.id:
@@ -43,7 +46,7 @@ def can_person_edit_project(person, project):
         #     f"{person.username} ({str(person.id)}) cannot view Project ({str(project.id)})"
         # )
 
-def can_person_see_project(person, project):
+def can_person_see_project(person: Person, project: Project) -> bool:
     if "view" in (project.authorizations.get(str(person.id)) or []):
         return True
     elif project.owner == person.id:
@@ -56,7 +59,7 @@ def can_person_see_project(person, project):
         #     f"{person.username} ({str(person.id)}) cannot view Project ({str(project.id)})"
         # )
 
-def can_person_create_project(person):
+def can_person_create_project(person: Person) -> bool:
     # person only input make method?
     if Role.create in person.roles.keys():
         return True
@@ -68,12 +71,12 @@ def can_person_create_project(person):
         #     f"{person.username} cannot create new projects"
         # )
 
-def get_current_person(engine, session):
+def get_current_person(engine: SyncEngine, session: LocalProxy) -> Person:
     return engine.find_one(
         Person, Person.username == session["user"]["preferred_username"]
     )
 
-def is_admin(person):
+def is_admin(person: Person) -> bool:
     if Role.admin in person.roles.keys():
         return True
     else:
