@@ -189,7 +189,7 @@ def construct_bp(engine):
     def update_user_auth():
         person = get_current_person(engine, session)
         form = get_form()
-        print(form)
+        # print(form)
         project = engine.find_one(Project, Project.id == ObjectId(form["project_id"]))
         # print(project)
         if can_person_edit_project(person, project):
@@ -504,10 +504,9 @@ def construct_bp(engine):
 
             # print({restriction: {"form_data": nest_dict(get_form())}})
             project.restriction_details = deep_update(
-                project.restriction_details, # [restriction]["form_data"],
+                project.restriction_details,
                 {restriction: {"form_data": nest_dict(get_form())}}
             )
-            # project.restriction_details[restriction]["form_data"].update(nest_dict(get_form()))
             engine.save(project)
            
         else:
