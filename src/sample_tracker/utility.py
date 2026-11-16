@@ -58,7 +58,7 @@ def nest_dict(flat_dict, sep='_'):
 
     >>> nest_dict({'title': 'foo', 'author_name': 'stretch',
     ... 'author_zipcode': '06901'})
-    {'author': {'name': 'stretch', 'zipcode': '06901'}, 'title': 'foo'}
+    { 'title': 'foo', 'author': {'name': 'stretch', 'zipcode': '06901'}}
     """
     tree = {}
     for key, val in flat_dict.items():
