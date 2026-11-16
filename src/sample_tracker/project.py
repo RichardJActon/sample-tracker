@@ -497,6 +497,9 @@ def construct_bp(engine):
             try:
                 if restriction in project_restrictions:
                     restriction_details = project.restriction_details.get(restriction)
+                    # allow admins and appovers to update whilst pending?
+                    if restriction_details.get("status") == "Pending":
+                        raise PermissionError("Cannot update project details whilst approval is pending")
                 else:
                     raise Exception(f"The restriction {restriction} does not apply to the project {project_id}")
             except Exception as e:

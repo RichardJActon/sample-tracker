@@ -193,6 +193,9 @@
 										{% if element.data.required %}
 											required={{element.data.required}}
 										{% endif %}
+										{% if project.restriction_details[restriction].status == "Pending" %}
+										disabled
+										{% endif %}
 									>
 								</div>
 								<div class="col-md-2">
@@ -200,7 +203,11 @@
 										form="{{section_id}}_{{element_id}}_upload"
 										name="{{section_id}}_{{element_id}}_upload"
 										id="{{section_id}}_{{element_id}}_upload"
-										class="btn btn-primary">
+										class="btn btn-primary"
+										{% if project.restriction_details[restriction].status == "Pending" %}
+										disabled
+										{% endif %}
+									>
 											Upload
 									</button>
 								</div>
@@ -212,6 +219,9 @@
 										{% if form_data.get(section_id, {}).get(element_id, {}).get('filename', false) %}
 										class="button btn btn-danger"
 										{% else %}
+										class="button disabled btn btn-danger"
+										{% endif %}
+										{% if project.restriction_details[restriction].status == "Pending" %}
 										class="button disabled btn btn-danger"
 										{% endif %}
 									>
@@ -278,19 +288,6 @@
 </div>
 
 <div class="row mt-5">
-	<input
-		form="main-form"
-		id="save"
-		type="submit"
-		class="button btn btn-primary"
-		style="width:25%;margin-left: auto;margin-right: auto;"
-	>
-	<!-- <button id="save" type="button" class="btn btn-primary" style="width:25%;margin-left: auto;margin-right: auto;"> -->
-		<!-- Save -->
-	<!-- </button> -->
-</div>
-
-<div class="row mt-5">
 	<a
 		id="cancel"
 		style="button; width:25%;margin-left: auto;margin-right: auto;"
@@ -299,9 +296,29 @@
 	>
 		Cancel
 	</a>
+	{% if project.restriction_details[restriction].status == "Pending" %}
+	<button
+		class="btn btn-primary"
+		style="width:25%;margin-left: auto;margin-right: auto;"
+		disabled
+	>
+		Submit
+	</button>
+	{% else %}
+	<input
+		form="main-form"
+		id="save"
+		type="submit"
+		class="button btn btn-primary"
+		style="width:25%;margin-left: auto;margin-right: auto;"
+	>
+	{% endif %}
+	<!-- <button id="save" type="button" class="btn btn-primary" style="width:25%;margin-left: auto;margin-right: auto;"> -->
+		<!-- Save -->
+	<!-- </button> -->
 </div>
 
-<p></p>
+<br>
 
 <!-- Modal -->
 <div id="selectRestrictions" class="modal" tabindex="-1">
