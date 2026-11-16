@@ -21,6 +21,10 @@ document.addEventListener("DOMContentLoaded", function() {
     document.querySelectorAll(".remove-restriction-button").forEach(function(x) {
       x.addEventListener("click", remove_restriction_modal)
     })
+
+    document.querySelectorAll(".submit-approval-request").forEach(function(x) {
+        x.addEventListener("click", confirm_restriction_submission)
+    })
 })
 
 function delete_attachment_modal() {
@@ -203,6 +207,52 @@ function add_restriction() {
     })
     .catch(message => {
         document.getElementById("add-restrictions-error").textContent = "Failed to add restrictions"
+        return
+    })
+}
+
+function confirm_restriction_submission() {
+    const restriction = this.dataset.restriction
+    const submit_btn = document.createElement('button')
+    submit_btn.textContent = "Submit"
+    submit_btn.classList.add('btn')
+    // submit_btn.classList.add('btn-sm')
+    submit_btn.classList.add('btn-danger')
+    submit_btn.id = "submit-restriction-button"
+    submit_btn.dataset.restriction = restriction
+    submit_btn.addEventListener("click", submit_restriction)
+    document.getElementById("confirmDeleteButton").replaceWith(submit_btn)
+    document.getElementById("confirmDeleteMessage").textContent = `
+        Are you sure you want to submit this restriction for approval?
+        You will be unable to update the details of the request after this point unless the person approving your project for this restriction requests changes to the submission prior to approval.
+        ` 
+    new bootstrap.Modal(document.getElementById("confirmDelete")).show()
+}
+
+function submit_restriction() {
+    const project_id = location.pathname.split("/").pop()
+    const restriction = document.getElementById("submit-restriction-button").dataset.restriction
+    
+    fetch("/approval_requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded"},
+        body: new URLSearchParams({
+            project_id: project_id,
+            status: "Pending",
+            restriction: restriction,
+        })
+    })
+    .then(response => {
+        if(!response.ok) throw new Error("Request failed");
+        return response.text();
+    })
+    .then(project_id => {
+        bootstrap.Modal.getInstance(document.getElementById("confirmDelete")).hide()
+        document.getElementById("submit-approval-request-" + restriction).disabled = true
+        location.reload()
+    })
+    .catch(message => {
+        console.log("Failed to submit restriction for approval")
         return
     })
 }

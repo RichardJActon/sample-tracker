@@ -117,6 +117,7 @@ Log Out
 							<tbody>
 								{% if project.restrictions %}
 								{% for r in project.restrictions %}
+								{% set status = project.restriction_details.get(r.value).get('status') %}
 								<tr>
 									<td class="restriction">{{ r.value }}</td>
 									<td>
@@ -128,15 +129,28 @@ Log Out
 									</td>
 									<td>
 										<span class="badge text-bg-{{- approval_status(project.restriction_details[r.value]['status']).get_colour_class() -}}">
-										{{project.restriction_details[r.value]["status"]}}
+										{{- status -}}
 										</span>
 									</td>
 									<td>
-										<button class="btn btn-sm editsample btn-primary">
+										{% if status == "Pending" %}
+										<button
+											class="btn btn-sm btn-primary submit-approval-request"
+											id="submit-approval-request-{{r.value}}"
+											data-restriction="{{r.value}}"
+											disabled
+										>
+										{% else %}
+										<button
+											class="btn btn-sm btn-primary submit-approval-request"
+											id="submit-approval-request-{{r.value}}"
+											data-restriction="{{r.value}}"
+										>
+										{% endif %}
 											Submit
 										</button>
 									</td>
-									{% if person.is_admin() or r.value in person.get_roles() or project.restriction_details.get(r.value).get('status') == "Not Submitted" %}
+									{% if person.is_admin() or r.value in person.get_roles() or status == "Not Submitted" %}
 									<td>
 										<button
 											class="btn btn-sm remove-restriction-button btn-danger"
