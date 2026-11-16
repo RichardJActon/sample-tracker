@@ -13,8 +13,8 @@
 
 <div class="row">
 	<p class="text-center">
-		<span class="status {{ project.status.value }}">
-			{{ project.status.value }}
+		<span class="badge text-bg-{{ ApprovalStatus(project.restriction_details[restriction].status).get_colour_class() }}">
+			{{ project.restriction_details[restriction].status }}
 		</span>
 		| {{ project.owner }}
 	</p>

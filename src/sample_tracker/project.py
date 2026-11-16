@@ -518,6 +518,7 @@ def construct_bp(engine):
             project = project,
             restriction_details = restriction_details,
             restriction = restriction,
+            ApprovalStatus = ApprovalStatus,
             restriction_definition = globals().get(restriction)
         ) 
     
