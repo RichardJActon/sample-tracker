@@ -31,7 +31,7 @@ from opinionated_mixins.contrib.odmantic.activity import ODManticMixinMetaclass
 with open(Path(os.environ.get("APP_CONFIG_PATH", "config.yaml")).resolve(), "r") as f:
     config = yaml.load(f, Loader=yaml.Loader)
 
-class EnumExtra():
+class EnumExtra:
     """
     Adds simple names & values methods to a Enum class to make it easy
     to get sets of the available entries in the Enum
@@ -75,6 +75,23 @@ class ApprovalStatus(EnumExtra, str, Enum):
             "Denied": "danger",
         }
         return colour_class_map.get(self.value)
+
+    @classmethod
+    def approver_targets(cls):
+        return {cls(x) for x in ["Denied", "Approved", "Requires Revisions"]}
+    
+    @classmethod
+    def approver_sources(cls):
+        return {cls("Pending")}
+    
+    @classmethod
+    def submitter_targets(cls):
+        return {cls("Pending")}
+    
+    @classmethod
+    def submitter_sources(cls):
+        return {cls(x) for x in ["Not Submitted", "Requires Revisions"]}
+    
 
 # class Roles(str, Enum):
 class Authorizations(EnumExtra, str, Enum):
