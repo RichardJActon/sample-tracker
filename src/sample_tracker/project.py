@@ -40,6 +40,7 @@ from sample_tracker.datamodel import (
     Restriction,
     ApprovalStatus,
     Authorizations,
+    Role,
 )
 from sample_tracker.restrictions import *
 
@@ -517,11 +518,38 @@ def construct_bp(engine):
 
         return render_template(
             "pages/restrictions.html",
+            person = person,
             project = project,
             restriction_details = restriction_details,
             restriction = restriction,
             ApprovalStatus = ApprovalStatus,
             restriction_definition = globals().get(restriction)
         ) 
+
+    @bp.route("/project/restriction_approval_status/", methods = ["GET", "POST"])
+    @requires_auth
+    def restriction_approval_status():
+        person = get_current_person(engine, session)
+        form = get_form()
+        try:
+            project = engine.find_one(Project, Project.id == ObjectId(form["project_id"]))
+        except Exception as e:
+            current_app.logger.exception(str(e))
+        try:
+            if can_person_edit_project(person, project):
+                if Role(form["restriction"]) in person.get_roles_set() or person.is_admin():
+                    if (ApprovalStatus(form["target-status"]) in ApprovalStatus.approver_targets() and project.restriction_details[form["restriction"]]["status"] in ApprovalStatus.approver_sources()) or person.is_admin():
+                        project.restriction_details[form["restriction"]]["status"] = form["target-status"]
+                        project.restriction_details[form["restriction"]]["approval_feedback"] = form["approval-feedback"]
+                        engine.save(project)
+                    else:
+                        raise PermissionError("Transition disallowed")
+                else:
+                    raise PermissionError("Not an admin or approver for this restriction")
+        except Exception as e:
+            current_app.logger.exception(str(e))
+            return Response(str(e), status=403)
+            
+        return "OK"
     
     return bp

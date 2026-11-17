@@ -1,9 +1,24 @@
 {% extends "base.html" %}
 
 {% block buttons %}
-<a href="{{ url_for('index.index')}}" class="btn btn-primary" role="button">Home</a>
-<a href="{{ url_for('pages.account')}}" class="btn btn-primary" role="button">Account</a>
-<a href="{{ url_for('login.logout') }}" class="btn btn-danger" role="button">Log Out</a>
+<a
+	href="{{ url_for('index.index')}}"
+	class="btn btn-primary" role="button"
+>
+	Home
+</a>
+<a
+	href="{{ url_for('pages.account')}}"
+	class="btn btn-primary" role="button"
+>
+	Account
+</a>
+<a
+	href="{{ url_for('login.logout') }}"
+	class="btn btn-danger" role="button"
+>
+	Log Out
+</a>
 {% endblock %}
 
 {% block content %}
@@ -13,14 +28,88 @@
 
 <div class="row">
 	<p class="text-center">
-		<span class="badge text-bg-{{ ApprovalStatus(project.restriction_details[restriction].status).get_colour_class() }}">
+		<span
+			class="badge text-bg-{{ ApprovalStatus(project.restriction_details[restriction].status).get_colour_class() }}"
+		>
 			{{ project.restriction_details[restriction].status }}
 		</span>
 		| {{ project.owner }}
 	</p>
 </div>
+
 {% set requirements = restriction_definition.requirements %}
 {% set form_data = project.restriction_details[restriction].form_data %}
+
+<div class="row">
+	<div class="card p-0 border-2 border-warning">
+		<div class="card-header bg-warning-subtle">
+			<h5 class="card-title">
+				Approval
+			</h5>
+		</div>
+		<div class="card-body">
+			<p class="text-center">
+			{% if (person.is_admin() or restriction in person.get_roles()) %}
+				<form
+					id="approval-status-form"
+					method="POST"
+				>
+					<label for="target-status" form="approval-status-form">
+					Set status
+					</label>
+					<select
+						class="form-select"
+						form="approval-status-form"
+						name="target-status" id="target-status"
+					>
+						{% if project.restriction_details.get(restriction, {}).get('status', '') %}
+						<option
+							value="{{project.restriction_details.get(restriction, {}).get('status', '')}}"
+							selected
+						>
+							{{project.restriction_details.get(restriction, {}).get('status', '')}}
+						</option>
+						{% endif %}
+						{% if person.is_admin() %}
+							{% for status in ApprovalStatus.values() %}
+							<option value="{{status}}">{{status}}</option>
+							{% endfor %}
+						{% else %}
+							{% for status in ApprovalStatus.approver_targets_values() %}
+							<option value="{{status}}">{{status}}</option>
+							{% endfor %}
+						{% endif %}
+					</select>
+					<br>
+					<label for="approval-feedback" form="approval-status-form">
+					Comments - Specify required revisions, or provide reason for denial
+					</label>
+					<textarea
+						class="form-control"
+						id="approval-feedback" name="approval-feedback"
+					>{% if project.restriction_details.get(restriction, {}).get('approval_feedback', '') %}{{-  project.restriction_details.get(restriction, {}).get('approval_feedback', '') -}}{% endif %}</textarea>
+					<br>
+					<button
+						class="btn btn-primary"
+						form="approval-status-form" id="set-status"
+					>
+					Set Status
+					</button>
+				</form>
+				{% else %}
+					<h4>Requested Revisions</h4>
+					<p>
+					{% if project.restriction_details.get(restriction, {}).get('approval_feedback', '') %}
+					{{-  project.restriction_details.get(restriction, {}).get('approval_feedback', '') -}}
+					{% endif %}
+					</p>
+				{% endif %}
+			</p>
+		</div>
+	</div>
+</div>
+<br>
+
 <form id="main-form" method="POST">
 </form>
 <div class="row">

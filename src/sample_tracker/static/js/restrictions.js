@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", function() {
             x.files = dt.files
         }
     })
+    document.getElementById("set-status").addEventListener("click", update_status)
 })
 
 const path = location.pathname.split("/")
@@ -62,6 +63,32 @@ function upload_attachment() {
     .catch(message => {
         console.log(message)
         console.log("error uploading attachment")
+        return
+    })
+}
+
+function update_status() {
+    const form = document.getElementById("approval-status-form")
+    form.preventDefault
+    let formData = new FormData(form) 
+    formData.append("restriction", path.at(-1) )
+    formData.append("project_id", project_id)
+    fetch("/project/restriction_approval_status/", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        if(!response.ok) throw new Error("Request failed");
+        return response.text();
+    })
+    .then(response => {
+        // let del_file = form.querySelector("[id$=_delete]")
+        // del_file.setAttribute("class", "button btn btn-danger")
+        location.reload()
+    })
+    .catch(message => {
+        console.log(message)
+        console.log("Failed to upload status")
         return
     })
 }
