@@ -41,6 +41,9 @@ def construct_bp(engine):
 
         # query cannot be run with odmantic find interface drop to raw pymongo
         # then reconstruct odmantic objects from raw result
+        if person.is_admin():
+            approver_roles_held = Restriction.values()
+
         projects = engine.get_collection(Project)
         relevant_projects = {}
         for role in approver_roles_held:
