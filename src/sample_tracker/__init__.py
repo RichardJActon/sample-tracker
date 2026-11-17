@@ -8,6 +8,7 @@ from sample_tracker import (
     db,
     auth,
     approvals,
+    restrictions,
 )
 import os
 import yaml
@@ -73,6 +74,7 @@ def create_app():
     app.register_blueprint(project.construct_bp(engine))
     app.register_blueprint(pages.construct_bp(engine))
     app.register_blueprint(approvals.construct_bp(engine))
+    app.register_blueprint(restrictions.construct_bp(engine))
     
     return app
 
