@@ -27,14 +27,14 @@ def can_change_project_ownership(person: Person, project: Project) -> bool:
     # even if they are not admins?
     if Role.admin in person.roles.keys():
         return True
-    elif "edit" in (project.authorizations.get(str(person.id)) or []):
+    elif "edit" in project.authorizations.get(str(person.id), []):
         return True
     else:
         return False
         # raise Exception("cannot change project ownership")
 
 def can_person_edit_project(person: Person, project: Project) -> bool:
-    if "edit" in (project.authorizations.get(str(person.id))or []):
+    if "edit" in project.authorizations.get(str(person.id), []):
         return True
     elif project.owner == person.id:
         # NB owners should also be in authorizations, included defensively
@@ -47,7 +47,7 @@ def can_person_edit_project(person: Person, project: Project) -> bool:
         # )
 
 def can_person_see_project(person: Person, project: Project) -> bool:
-    if "view" in (project.authorizations.get(str(person.id)) or []):
+    if "view" in project.authorizations.get(str(person.id), []):
         return True
     elif project.owner == person.id:
         # NB owners should also be in authorizations, included defensively
