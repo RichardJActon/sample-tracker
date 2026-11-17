@@ -311,7 +311,7 @@ def construct_bp(engine):
                     # {"error:" "importError"}
                     return redirect(request.url)
                 file = request.files[id]
-                print(file.filename)
+                # print(file.filename)
                 if file.filename == "":
                     flash("No selected file")
                     # {"error:" "noFileFound"}
