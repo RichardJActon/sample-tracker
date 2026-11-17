@@ -79,6 +79,10 @@ class ApprovalStatus(EnumExtra, str, Enum):
     @classmethod
     def approver_targets(cls):
         return {cls(x) for x in ["Denied", "Approved", "Requires Revisions"]}
+
+    @classmethod
+    def approver_targets_values(cls):
+        return {x.value for x in cls.approver_targets()}
     
     @classmethod
     def approver_sources(cls):
@@ -204,6 +208,9 @@ class Person(AppVersionInfo, Model):
     
     def get_roles(self):
         return {k.value for k in self.roles.keys()}
+    
+    def get_roles_set(self):
+        return {k for k in self.roles.keys()}
     
     def get_roles_csl(self):
         return ", ".join(self.roles.keys())
