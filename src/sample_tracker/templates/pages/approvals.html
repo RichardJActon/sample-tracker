@@ -69,6 +69,7 @@
 								<th scope="col">Date</th>
 								<th scope="col">Project Status</th>
 								<th scope="col">Restriction Status</th>
+								<th scope="col">Restriction Details</th>
 								<th scope="col">Open</th>
 								{% if person.is_admin() %}
 								<th scope="col">Delete</th>
@@ -100,6 +101,14 @@
 										{{ status }}
 									</span>
 								</td>
+								<td>
+									<a
+										href={{ url_for('project.restrictions', project_id = project.id, restriction = restriction)}}
+									>
+										details
+									</a>
+								</td>
+								<td>
 								<td>
 									<a href="/project/{{ project.id }}"
 									   role="button"
