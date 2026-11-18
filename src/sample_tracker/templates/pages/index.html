@@ -13,6 +13,14 @@
 >
 	Account
 </a>
+{% if person.is_admin() %}
+<a href="{{ url_for('pages.users')}}"
+   class="btn btn-info"
+   role="button"
+>
+	Users
+</a>
+{% endif %}
 {% if person.can_create_project() %}
 <a href="{{ url_for('project.editproject') }}"
    class="btn btn-success"

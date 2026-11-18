@@ -215,6 +215,12 @@ class Person(AppVersionInfo, Model):
     def get_roles_csl(self):
         return ", ".join(self.roles.keys())
 
+    def add_roles(self, roles):
+        self.roles |= {role: 0 for role in roles}
+
+    def remove_roles(self, roles):
+        self.roles = {k: v for k, v in self.roles.items() if k not in {role: 0 for role in roles}}
+
     def is_admin(self):
         if Role.admin in self.roles.keys():
             return True

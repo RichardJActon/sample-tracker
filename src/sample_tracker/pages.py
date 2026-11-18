@@ -2,11 +2,13 @@
 from sample_tracker.datamodel import (
     Project,
     Sample,
+    Person,
+    Role,
 )
 from sample_tracker.auth import requires_auth
 from sample_tracker.permissions import (
     # apply_permissions,
-    get_current_person, # session?
+    get_current_person,
     can_person_edit_project,
 )
 from sample_tracker.utility import get_form
@@ -50,6 +52,59 @@ def construct_bp(engine):
             n_projects = n_projects
         )
         # pass
+
+    @bp.route("/users")
+    @requires_auth
+    def users():
+        person = get_current_person(engine, session)
+        try:
+            if person.is_admin():
+                try:
+                    people = list(engine.find(Person))
+                except Exception as e:
+                    current_app.logger.exception(str(e))
+                return render_template(
+                    "pages/users.html",
+                    person = person, people = people, roles = Role.values()
+                )
+            else:
+                raise PermissionError("Admins Only")
+        except Exception as e:
+            current_app.logger.exception(str(e))
+            Response(str(e), status=403)
+
+        return "OK"
+
+    @bp.route("/update_user", methods = ["POST", "GET"])
+    # @bp.route("/update_user/<person_id>/<role>")
+    @requires_auth
+    # def update_user(person_id, role):
+    def update_user():
+        person = get_current_person(engine, session)
+        try:
+            if person.is_admin():
+                form = get_form()
+                print(form)
+                try:
+                    user = engine.find_one(
+                        Person, Person.id == ObjectId(form["person_id"])
+                    )
+                except Exception as e:
+                    current_app.logger.exception(str(e))
+                try:
+                    if form["update_type"] == "add":
+                        user.add_roles({Role(form["role"]).value})
+                    elif form["update_type"] == "remove": 
+                        user.remove_roles({Role(form["role"]).value})
+                    engine.save(user)
+                except Exception as e:
+                    current_app.logger.exception(str(e))
+                return "OK"
+            else:
+                raise PermissionError("Admins Only")
+        except Exception as e:
+            current_app.logger.exception(str(e))
+            Response(str(e), status=403)
 
     @bp.route("/savesample", methods = ['POST', 'GET'])
     @requires_auth
