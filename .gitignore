@@ -3,3 +3,4 @@ __pycache__
 data/keycloak/db
 data/uploads
 docs/build
+src/sample_tracker/static/node_modules
