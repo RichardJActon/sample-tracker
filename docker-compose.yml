@@ -110,7 +110,10 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
 
       # Development mode settings
-      KC_HTTP_PORT: 8080
+      KC_HTTP_PORT: "8081"
+      # KC_HTTP_PORT: 8080
+      # keep internal and external ports consistent for ease
+      # when accessing the service from others using the docker default network
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
 
@@ -126,9 +129,13 @@ services:
       CLIENT_SECRET: ${APP_OAUTH_ENDPOINTS__testing__client_secret}
       # Replace the secret in the exported config with the CLIENT_SECRET variable
       # https://www.keycloak.org/server/importExport#_using_environment_variables_within_the_realm_configuration_files
+      
+      # causes the endpoint urls in the metadata endpoint to update
+      # automatically to reflect the request origins/targets
+      KC_HOSTNAME: http://localhost:8081
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
     volumes:
       - ./data/keycloak/app-dev-realm.json:/opt/keycloak/data/import/app-dev-realm.json:ro
-
       # You can manually persist the database to a particular location
       # Persist the database whilst performing the initial manual configuration and export steps:
 
@@ -140,7 +147,7 @@ services:
       # Persist the import/export directory for performing the export:
       # - ./data/keycloak/:/opt/keycloak/data/import/
     ports:
-      - "8081:8080"
+      - "127.0.0.1:8081:8081"
 
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'"]
@@ -165,3 +172,59 @@ services:
 # app-keycloak-dev  | 2026-10-26T12:19:24.272457000Z 2026-10-26 12:19:24,272 INFO  [com.arjuna.ats.jbossatx] (main) ARJUNA032014: Stopping transaction recovery manager
 # app-keycloak-dev  | 2026-10-26T12:19:24.341832000Z 2026-10-26 12:19:24,341 ERROR [org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler] (main) ERROR: Failed to start server in (nonserver) mode
 # app-keycloak-dev  | 2026-10-26T12:19:24.342643000Z 2026-10-26 12:19:24,341 ERROR [org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler] (main) Error details:: java.lang.NullPointerException: Cannot invoke "org.keycloak.models.RealmModel.getId()" because "realm" is null
+
+  sample-tracker:
+    image: ghcr.io/astral-sh/uv:python3.12-trixie-slim
+    # build: .
+    container_name: sample-tracker
+    working_dir: /app
+    # entrypoint: []
+    # The container's default entrypoint is ["uv"] so this needs to be
+    # overridden to to run the the full uv sync / run commands
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        uv sync --locked --all-extras --dev
+        # uv run flask --app src/sample_tracker run --host=0.0.0.0
+        uv run flask --debug --app src/sample_tracker run --host=0.0.0.0
+    volumes:
+      - ./:/app
+      - /app/.venv # do not mount .venv
+      
+    environment:
+      APP_MONGO__PWD: ${APP_MONGO__PWD}
+      APP_MONGO__DATABASE: ${APP_MONGO__DATABASE}
+      APP_MONGO__USER: ${APP_MONGO__USER}
+      APP_MONGO__AUTH_SOURCE: ${APP_MONGO__AUTH_SOURCE}
+      APP_OAUTH_ENDPOINTS__testing__client_secret: ${APP_OAUTH_ENDPOINTS__testing__client_secret}
+      APP_SECRET_KEY: ${APP_SECRET_KEY}
+      
+      # overriding the default values here to use the docker default network
+      APP_OAUTH_ENDPOINTS__testing__server_metadata_url: http://keycloak:8081/realms/app-dev/.well-known/openid-configuration
+      APP_OAUTH_ENDPOINTS__testing__revocation: http://keycloak:8081/realms/app-dev/protocol/openid-connect/revoke
+      # APP_MONGO__HOST: ${APP_MONGO__HOST}
+      APP_MONGO__HOST: mongodb
+      # APP_MONGO__PORT: ${APP_MONGO__PORT}
+      APP_MONGO__PORT: 27017 # accessing via the docker default network
+    ports:
+      - "127.0.0.1:5080:5000"
+
+    # Consider using develop/watch?
+    # develop:
+    #   # Create a `watch` configuration to update the app
+    #   watch:
+    #     # Sync the working directory with the `/app` directory in the container
+    #     - action: sync
+    #       path: .
+    #       target: /app
+    #       # Exclude the project virtual environment
+    #       ignore:
+    #         - .venv/
+    #         - data/mongodb
+    #         - data/keycloak
+
+    #     # Rebuild the image on changes to the `pyproject.toml`
+    #     - action: rebuild
+    #       path: ./pyproject.toml
+    # 
