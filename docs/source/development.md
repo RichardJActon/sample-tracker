@@ -1,9 +1,29 @@
 Development
 ===========
 
-## Tech Stack
-
 The [source code](https://github.com/RichardJActon/sample-tracker) is hosted on GitHub.
+
+## Quickstart
+
+```
+git clone https://github.com/RichardJActon/sample-tracker.git
+
+# Populate the .env file - see below
+
+# get js & css dependencies
+cd src/sample-tracker/static
+npm ci
+cd ../../../
+
+docker compose up -d
+```
+
+The app will be served on [localhost:5080](http://localhost:5080)
+
+This is an INSECURE DEVELOPMENT ONLY DEPLOYMENT with debug mode on and
+a bind mount to the working directory so it will reflect your changes live.
+
+## Tech Stack
 
 ### Secrets & Environment variables
 
@@ -49,23 +69,32 @@ environment.
 ### Database & Authentication services
 
 This application makes use of [MongoDb](https://www.mongodb.com/) as it's database backend.
-It also makes use of a Keycloak server to handle authentication with OAuth2/OIDC.
+It also makes use of a [Keycloak](https://www.keycloak.org/) server to handle authentication with OAuth2/OIDC.
 Both of these can be made available in the development environment via Docker
 There is a `docker-compose.yml` file in the project root directory which sets up
 development instances of both of these services.
 
-Run `docker compose up -d` to start these services
+Run `docker compose up -d` to start these services and a development
+deployment of the main application on [localhost:5080](http://localhost:5080).
+This is for development ONLY it runs in debug mode and will live-update as
+there is a bind mount to the project directory.
+The app currently runs in a pre-built debian container from UV with a python
+version selected to match the one in the `pyproject.toml` file.
+
+DO NOT DEPLOY THIS TO PRODUCTION!!
+
+This is not a secure configuration by default keycloak is running in dev mode,
+the flask app is running with debug on and mongodb is exposed on the host
+network by default so it is easy to connect with mongosh from the host for debugging.
 
 The data for the database will be stored in `data/mongodb` which should be
 emptied of everything but the .gitignore file it contains before first
-starting the container.
+starting the container for a clean empty database on container startup.
 
 For additional details on setting up keycloak users for testing and development
-see the comment in the docker compose file.
+see the comments in the docker compose file.
 
 ### Python
-
-The python environment for this project is managed with [uv](https://docs.astral.sh/uv/)
 
 The primary framework used for the app is [Flask](https://flask.palletsprojects.com/en/stable/)
 The [odmantic](https://art049.github.io/odmantic/) package is used to interface with the MongoDb database backend.
@@ -74,11 +103,37 @@ There is an application factory function defined in
 `src/sample_tracker/__init__.py` and blueprints are also define in factory
 functions called from within the primary app function.
 
+The python environment for this project is managed with [uv](https://docs.astral.sh/uv/)
+
+If you are not using the docker compose development environment and wish to
+develop the app directly on your host providing your own mongoDB and OAuth/OIDC
+endpoints here is how.
+
+Dependencies can be installed run the sync command in the project root directory:
+
+```
+uv sync
+```
+
 The application can be started in debug mode with the following command:
 
 ```
-flask --debug --app src/sample_tracker run
+uv run flask --debug --app src/sample_tracker run
 ```
+
+This will run the app in the uv virtual environment without your first entering
+that environment. To enter the virtual environment run:
+
+```
+source .venv/bin/activate
+```
+
+:::{tip}
+This project contains a `.envrc` file if you have
+[direnv](https://direnv.net/) and run `direnv allow` it will automatically drop
+you into the python environment when you enter the directory so you don't
+have to source the virtual env every time.
+:::
 
 System tools not in the uv environment:
 
@@ -92,6 +147,14 @@ System tools not in the uv environment:
 [npm](https://www.npmjs.com/) is used to manage the js dependencies of this project.
 The `packages.json` and lock files can be found in the static assets directory:
 `src/sample_tracker/static` 
+
+To install the resources from npm run the following:
+
+```
+cd src/sample-tracker/static
+npm ci
+cd ../../../
+```
 
 Themeing is done with [Bootstrap](https://getbootstrap.com/)
 

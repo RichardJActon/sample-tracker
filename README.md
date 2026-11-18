@@ -6,26 +6,20 @@ For additional information see the [Documentation](https://richardjacton.github.
 
 ## Development Quick start
 
-Requires docker, uv, & npm
+Requires docker, (uv), & npm
 
 ```
 git clone https://github.com/RichardJActon/sample-tracker.git
 
 # Populate the .env file - see below
 
-# MongoDb & Keycloak
-docker compose up -d
-
-# python dependencies
-uv sync
-# (optional) direnv allow # automatically enter the python venv when in this directory
-
-# js & css dependencies
+# get js & css dependencies
 cd src/sample-tracker/static
 npm ci
 cd ../../../
 
-flask --debug --app src/sample_tracker run
+# MongoDb, Keycloak, & sample-tracker
+docker compose up -d
 ```
 
 **Secrets & Environment variables**
@@ -57,28 +51,10 @@ login flow
 - a user must first exist in an oauth/oidc provider.
 - NB look into logout of all devices
 
-roles
-  - approver for restriction X
-permissions
-  - view
-  - move
-  - propose / edit
-  - admin
-
-viewer
-  - no move, edit, group creation options visible
-
-mover
-  - can add events that update location
-  - can create sample groups
-
-
-
 database
 - initial example user creation in the database init bash script
 so not necessarily consistent with the content need be an initial object created
 by the odmantic data model - consider a db init with python script run in the
 docker setup
 
-- add tag/commit hash version information as object metadata for all objects
-to facilitate possible future database migrations to accomodate data model changes
+- add npm dependency management to docker-compose setup
