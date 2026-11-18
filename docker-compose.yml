@@ -185,6 +185,12 @@ services:
     command:
       - -c
       - |
+        ### move to image build?
+        apt-get update && apt-get install -y --no-install-recommends npm
+        pushd src/sample_tracker/static
+        npm ci
+        popd
+        ###
         uv sync --locked --all-extras --dev
         # uv run flask --app src/sample_tracker run --host=0.0.0.0
         uv run flask --debug --app src/sample_tracker run --host=0.0.0.0
